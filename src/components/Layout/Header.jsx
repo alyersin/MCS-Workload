@@ -102,12 +102,10 @@ const Header = () => {
           />
         </Link>
 
-        {/* Desktop Nav */}
         <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
           {navLinks.props.children}
         </HStack>
 
-        {/* Mobile Hamburger */}
         <IconButton
           aria-label="Open menu"
           icon={<HamburgerIcon />}
@@ -116,7 +114,6 @@ const Header = () => {
           variant="ghost"
         />
 
-        {/* Mobile Drawer */}
         <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
           <DrawerOverlay />
           <DrawerContent>

@@ -1,16 +1,47 @@
+"use client";
 import Image from "next/image";
-import { Box } from "@chakra-ui/react";
-
+import {
+  Box,
+  Heading,
+  Text,
+  Button,
+  VStack,
+  Container,
+} from "@chakra-ui/react";
+import { useRouter } from "next/navigation";
+import NoticeModal from "@/components/Modals/NoticeModal";
 export default function Home() {
+  const router = useRouter();
+
   return (
     <Box
+      minH="100vh"
       display="flex"
-      justifyContent="center"
       alignItems="center"
-      // minH="100vh"
-      // bg="gray.50"
+      justifyContent="center"
+      bg="gray.50"
+      px={4}
     >
-      <Image src="/wop.webp" width={900} height={900} alt="WOP logo" priority />
+      <NoticeModal />
+
+      <Container maxW="lg" textAlign="center">
+        <VStack spacing={8}>
+          <Heading as="h1" size="xl" color="teal.600">
+            Welcome to MCS Workload Portal
+          </Heading>
+          <Text fontSize="lg" color="gray.700">
+            A streamlined platform for creating, submitting, and managing
+            operational survey reports efficiently and securely.
+          </Text>
+          <Button
+            colorScheme="teal"
+            size="lg"
+            onClick={() => router.push("/RaportAmaraj")}
+          >
+            Start a New Report
+          </Button>
+        </VStack>
+      </Container>
     </Box>
   );
 }
