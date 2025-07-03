@@ -32,11 +32,16 @@ export default function Header() {
 
   const navLinks = (
     <VStack align="start" spacing={4}>
-      <Link href="/" _hover={{ textDecoration: "none" }}>
+      <Link href="/" textDecoration="none" _hover={{ textDecoration: "none" }}>
         Home
       </Link>
+
       <Menu>
-        <MenuButton as={Link} _hover={{ textDecoration: "none" }}>
+        <MenuButton
+          as={Link}
+          textDecoration="none"
+          _hover={{ textDecoration: "none" }}
+        >
           Cargo Condition
         </MenuButton>
         <MenuList>
@@ -67,14 +72,23 @@ export default function Header() {
           <MenuItem as={Link} href="/cargo/vessel-barge">
             Vessel/Barge
           </MenuItem>
+          <MenuItem as={Link} href="/RaportAmaraj">
+            Lashing
+          </MenuItem>
         </MenuList>
       </Menu>
-      <Link href="/RaportAmaraj" _hover={{ textDecoration: "none" }}>
-        Lashing Report
-      </Link>
-      <Link href="/contact" _hover={{ textDecoration: "none" }}>
-        Contact
-      </Link>
+
+      <Button
+        as={Link}
+        href="/login"
+        colorScheme="teal"
+        size="sm"
+        width="100%"
+        textDecoration="none"
+        _hover={{ textDecoration: "none" }}
+      >
+        Login
+      </Button>
     </VStack>
   );
 
@@ -89,9 +103,8 @@ export default function Header() {
       borderColor={useColorModeValue("gray.200", "gray.700")}
       mb={8}
     >
-      <Box width="1280px" mx="auto">
-        <Flex align="center" justify="space-between">
-          {/* Logo */}
+      <Box width={{ base: "100%", md: "1024px" }} mx="auto">
+        <Flex align="center" justify="space-between" position="relative">
           <Link href="/" _hover={{ textDecoration: "none" }}>
             <Image
               src="/logo/logo.png"
@@ -103,7 +116,78 @@ export default function Header() {
           </Link>
 
           <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
-            {navLinks.props.children}
+            <Link
+              href="/"
+              textDecoration="none"
+              _hover={{ textDecoration: "none" }}
+            >
+              Home
+            </Link>
+
+            <Menu>
+              <MenuButton
+                as={Link}
+                textDecoration="none"
+                _hover={{ textDecoration: "none" }}
+              >
+                Services
+              </MenuButton>
+              <MenuList>
+                <MenuGroup title="Transloading">
+                  <MenuItem
+                    as={Link}
+                    href="/cargo/transloading/container-to-truck"
+                  >
+                    container → truck
+                  </MenuItem>
+                  <MenuItem
+                    as={Link}
+                    href="/cargo/transloading/truck-to-container"
+                  >
+                    truck → container
+                  </MenuItem>
+                </MenuGroup>
+                <MenuDivider />
+                <MenuGroup title="Stuffing">
+                  <MenuItem
+                    as={Link}
+                    href="/cargo/stuffing/storage-to-container"
+                  >
+                    storage → container
+                  </MenuItem>
+                </MenuGroup>
+                <MenuDivider />
+                <MenuGroup title="Stripping">
+                  <MenuItem
+                    as={Link}
+                    href="/cargo/stripping/container-to-storage"
+                  >
+                    container → storage
+                  </MenuItem>
+                </MenuGroup>
+                <MenuDivider />
+                <MenuItem as={Link} href="/cargo/transshipment-c2c">
+                  Transshipment (C2C)
+                </MenuItem>
+                <MenuItem as={Link} href="/cargo/vessel-barge">
+                  Vessel/Barge
+                </MenuItem>
+                <MenuItem as={Link} href="/RaportAmaraj">
+                  Lashing
+                </MenuItem>
+              </MenuList>
+            </Menu>
+
+            <Button
+              as={Link}
+              href="/login"
+              colorScheme="teal"
+              size="sm"
+              textDecoration="none"
+              _hover={{ textDecoration: "none" }}
+            >
+              Login
+            </Button>
           </HStack>
 
           <IconButton
@@ -112,6 +196,7 @@ export default function Header() {
             display={{ base: "inline-flex", md: "none" }}
             onClick={onOpen}
             variant="ghost"
+            zIndex={10}
           />
 
           <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
