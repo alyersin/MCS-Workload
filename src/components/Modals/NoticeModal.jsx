@@ -43,7 +43,7 @@ export default function NoticeModal() {
             bottom="1.5rem"
             left="3.5rem"
             zIndex={999}
-            size="sm"
+            size="lg"
             onClick={onOpen}
             aria-label="App Info"
           />

@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 import {
   Box,
   Heading,
@@ -10,20 +9,19 @@ import {
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
 import NoticeModal from "@/components/Modals/NoticeModal";
+
 export default function Home() {
   const router = useRouter();
 
   return (
     <Box
-      minH="100vh"
+      flex="1"
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bg="gray.50"
       px={4}
     >
       <NoticeModal />
-
       <Container maxW="lg" textAlign="center">
         <VStack spacing={8}>
           <Heading as="h1" size="xl" color="teal.600">

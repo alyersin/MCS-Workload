@@ -7,10 +7,22 @@ import Header from "@/components/Layout/Header.jsx";
 import Footer from "@/components/Layout/Footer.jsx";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
+import { useEffect, useState } from "react";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isLoginPage = pathname === "/login";
+
+  const [formattedDate, setFormattedDate] = useState("");
+
+  useEffect(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const month = now.getMonth() + 1;
+    const year = String(now.getFullYear()).slice(-2);
+    setFormattedDate(`${day}.${month}.${year}`);
+    document.title = `MCS Portal – dev.build ${day}.${month}.${year}`;
+  }, []);
 
   return (
     <html lang="en" style={{ height: "100%" }}>
@@ -33,25 +45,17 @@ export default function RootLayout({ children }) {
         />
       </head>
 
-      <body
-        suppressHydrationWarning
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-          margin: 0,
-        }}
-      >
+      <body suppressHydrationWarning style={{ margin: 0 }}>
         <ChakraProvider theme={theme}>
-          {!isLoginPage && <Header />}
+          <Box minH="100vh" display="flex" flexDirection="column" bg="gray.50">
+            {!isLoginPage && <Header />}
 
-          <main style={{ flex: 1 }}>{children}</main>
+            <Box as="main" flex="1" display="flex" flexDirection="column">
+              {children}
+            </Box>
 
-          {!isLoginPage && (
-            <>
-              <Footer />
-            </>
-          )}
+            {!isLoginPage && <Footer />}
+          </Box>
         </ChakraProvider>
       </body>
     </html>

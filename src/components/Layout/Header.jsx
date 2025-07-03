@@ -27,7 +27,7 @@ import {
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 
-const Header = () => {
+export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const navLinks = (
@@ -82,7 +82,6 @@ const Header = () => {
     <Box
       as="header"
       width="full"
-      maxW="1280px"
       mx="auto"
       px={6}
       py={4}
@@ -90,41 +89,41 @@ const Header = () => {
       borderColor={useColorModeValue("gray.200", "gray.700")}
       mb={8}
     >
-      <Flex align="center" justify="space-between">
-        {/* Logo */}
-        <Link href="/" _hover={{ textDecoration: "none" }}>
-          <Image
-            src="/logo/logo.png"
-            alt="Company Logo"
-            width={100}
-            height={20}
-            objectFit="contain"
+      <Box width="1280px" mx="auto">
+        <Flex align="center" justify="space-between">
+          {/* Logo */}
+          <Link href="/" _hover={{ textDecoration: "none" }}>
+            <Image
+              src="/logo/logo.png"
+              alt="Company Logo"
+              width={100}
+              height={20}
+              objectFit="contain"
+            />
+          </Link>
+
+          <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
+            {navLinks.props.children}
+          </HStack>
+
+          <IconButton
+            aria-label="Open menu"
+            icon={<HamburgerIcon />}
+            display={{ base: "inline-flex", md: "none" }}
+            onClick={onOpen}
+            variant="ghost"
           />
-        </Link>
 
-        <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
-          {navLinks.props.children}
-        </HStack>
-
-        <IconButton
-          aria-label="Open menu"
-          icon={<HamburgerIcon />}
-          display={{ base: "inline-flex", md: "none" }}
-          onClick={onOpen}
-          variant="ghost"
-        />
-
-        <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
-          <DrawerOverlay />
-          <DrawerContent>
-            <DrawerCloseButton />
-            <DrawerHeader>Menu</DrawerHeader>
-            <DrawerBody>{navLinks}</DrawerBody>
-          </DrawerContent>
-        </Drawer>
-      </Flex>
+          <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
+            <DrawerOverlay />
+            <DrawerContent>
+              <DrawerCloseButton />
+              <DrawerHeader>Menu</DrawerHeader>
+              <DrawerBody>{navLinks}</DrawerBody>
+            </DrawerContent>
+          </Drawer>
+        </Flex>
+      </Box>
     </Box>
   );
-};
-
-export default Header;
+}

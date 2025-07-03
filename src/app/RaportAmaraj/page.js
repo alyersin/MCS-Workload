@@ -104,7 +104,6 @@ export default function RaportAmaraj() {
           }}
         >
           <FormControl isRequired>
-            <FormLabel>Secret key</FormLabel>
             <Input
               placeholder="Enter secret key"
               value={secretInput}
@@ -277,7 +276,7 @@ export default function RaportAmaraj() {
         </Box>
       ) : (
         <Text color="gray.500" textAlign="center">
-          Enter the correct secret key to unlock the form.
+          Secret key required to unlock the form.
         </Text>
       )}
     </Container>
