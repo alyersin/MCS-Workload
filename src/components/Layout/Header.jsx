@@ -7,6 +7,7 @@ import {
   Image,
   Link,
   Menu,
+  Text,
   MenuButton,
   MenuList,
   MenuItem,

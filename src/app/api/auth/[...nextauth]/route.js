@@ -11,9 +11,10 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // 1. Verify email/password with Firebase REST API
+        console.log("ENV KEY:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
+
         const response = await fetch(
-          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.FIREBASE_API_KEY}`,
+          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -24,10 +25,14 @@ const handler = NextAuth({
             }),
           }
         );
-        const data = await response.json();
-        if (data.error) return null;
 
-        // 2. Get user info from Firebase Admin
+        const data = await response.json();
+
+        if (data.error) {
+          console.error("Firebase Auth Error:", data.error);
+          return null;
+        }
+
         const userRecord = await adminAuth.getUserByEmail(credentials.email);
 
         return {
