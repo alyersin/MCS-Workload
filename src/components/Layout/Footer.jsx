@@ -23,7 +23,8 @@ export default function Footer() {
         gap={4}
       >
         <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>
-          &copy; {new Date().getFullYear()} MCS. All rights reserved.
+          &copy; {new Date().getFullYear()} Marine Control Services. All rights
+          reserved.
         </Text>
         <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.400")}>
           Platform developed by{" "}

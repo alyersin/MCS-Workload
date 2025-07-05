@@ -45,7 +45,7 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
           START NEW PROJECT
         </label>
 
-        <a href="#" className="menu-item item1">
+        <a href="/services/transshipment-C2C" className="menu-item item1">
           C2C Transfer
         </a>
         <div className="menu-item item2 stripping-wrapper">
@@ -87,7 +87,11 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
             </>
           )}
         </div>
-        <a href="#" rel="noopener noreferrer" className="menu-item item5">
+        <a
+          href="/services/raport-amaraj"
+          rel="noopener noreferrer"
+          className="menu-item item5"
+        >
           Lashing
         </a>
         <a href="#" rel="noopener noreferrer" className="menu-item item6">

@@ -8,6 +8,7 @@ import Footer from "@/components/Layout/Footer.jsx";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useState } from "react";
+import AuthProvider from "@/components/Providers/SessionProvider";
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -46,17 +47,24 @@ export default function RootLayout({ children }) {
       </head>
 
       <body suppressHydrationWarning style={{ margin: 0 }}>
-        <ChakraProvider theme={theme}>
-          <Box minH="100vh" display="flex" flexDirection="column" bg="gray.50">
-            {!isLoginPage && <Header />}
+        <AuthProvider>
+          <ChakraProvider theme={theme}>
+            <Box
+              minH="100vh"
+              display="flex"
+              flexDirection="column"
+              bg="gray.50"
+            >
+              {!isLoginPage && <Header />}
 
-            <Box as="main" flex="1" display="flex" flexDirection="column">
-              {children}
+              <Box as="main" flex="1" display="flex" flexDirection="column">
+                {children}
+              </Box>
+
+              {!isLoginPage && <Footer />}
             </Box>
-
-            {!isLoginPage && <Footer />}
-          </Box>
-        </ChakraProvider>
+          </ChakraProvider>
+        </AuthProvider>
       </body>
     </html>
   );

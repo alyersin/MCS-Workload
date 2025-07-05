@@ -26,9 +26,22 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
+import { useAuth } from "@/hooks/useAuth";
+import LoginModal from "@/components/Auth/LoginModal";
+import { useRouter } from "next/navigation";
 
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [isLoginModalOpen, setLoginModalOpen] = React.useState(false);
+  const { session, isAuthenticated, logout } = useAuth();
+  const router = useRouter();
+
+  const handleLoginOpen = () => setLoginModalOpen(true);
+  const handleLoginClose = () => setLoginModalOpen(false);
+  const handleRegister = () => {
+    setLoginModalOpen(false);
+    router.push("/register");
+  };
 
   const navLinks = (
     <VStack align="start" spacing={4}>
@@ -46,49 +59,72 @@ export default function Header() {
         </MenuButton>
         <MenuList>
           <MenuGroup title="Transloading">
-            <MenuItem as={Link} href="/cargo/transloading/container-to-truck">
-              container → truck
+            <MenuItem
+              as={Link}
+              href="/services/transloading/container-to-truck"
+            >
+              Container → Truck
             </MenuItem>
-            <MenuItem as={Link} href="/cargo/transloading/truck-to-container">
-              truck → container
+            <MenuItem
+              as={Link}
+              href="/services/transloading/truck-to-container"
+            >
+              Truck → Container
             </MenuItem>
           </MenuGroup>
           <MenuDivider />
           <MenuGroup title="Stuffing">
-            <MenuItem as={Link} href="/cargo/stuffing/storage-to-container">
-              storage → container
+            <MenuItem as={Link} href="/services/stuffing/storage-to-container">
+              Storage → Container
             </MenuItem>
           </MenuGroup>
           <MenuDivider />
           <MenuGroup title="Stripping">
-            <MenuItem as={Link} href="/cargo/stripping/container-to-storage">
-              container → storage
+            <MenuItem as={Link} href="/services/stripping/container-to-storage">
+              Container → Storage
             </MenuItem>
           </MenuGroup>
           <MenuDivider />
-          <MenuItem as={Link} href="/cargo/transshipment-c2c">
+          <MenuItem as={Link} href="/services/transshipment-C2C">
             Transshipment (C2C)
           </MenuItem>
-          <MenuItem as={Link} href="/cargo/vessel-barge">
+          <MenuItem as={Link} href="/services/vessel-barge">
             Vessel/Barge
           </MenuItem>
-          <MenuItem as={Link} href="/RaportAmaraj">
+          <MenuItem as={Link} href="/services/raport-amaraj">
             Lashing
           </MenuItem>
         </MenuList>
       </Menu>
 
-      <Button
-        as={Link}
-        href="/login"
-        colorScheme="teal"
-        size="sm"
-        width="100%"
-        textDecoration="none"
-        _hover={{ textDecoration: "none" }}
-      >
-        Login
-      </Button>
+      {isAuthenticated ? (
+        <VStack spacing={2} width="100%">
+          <Text fontSize="sm" color="gray.600">
+            Welcome, {session?.user?.name}
+          </Text>
+          <Button
+            onClick={logout}
+            colorScheme="red"
+            size="sm"
+            width="100%"
+            textDecoration="none"
+            _hover={{ textDecoration: "none" }}
+          >
+            Logout
+          </Button>
+        </VStack>
+      ) : (
+        <Button
+          onClick={handleLoginOpen}
+          colorScheme="teal"
+          size="sm"
+          width="100%"
+          textDecoration="none"
+          _hover={{ textDecoration: "none" }}
+        >
+          Login
+        </Button>
+      )}
     </VStack>
   );
 
@@ -138,13 +174,13 @@ export default function Header() {
                     as={Link}
                     href="/cargo/transloading/container-to-truck"
                   >
-                    container → truck
+                    Container → Truck
                   </MenuItem>
                   <MenuItem
                     as={Link}
                     href="/cargo/transloading/truck-to-container"
                   >
-                    truck → container
+                    Truck → Container
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
@@ -153,41 +189,57 @@ export default function Header() {
                     as={Link}
                     href="/cargo/stuffing/storage-to-container"
                   >
-                    storage → container
+                    Storage → Container
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
                 <MenuGroup title="Stripping">
                   <MenuItem
                     as={Link}
-                    href="/cargo/stripping/container-to-storage"
+                    href="/services/stripping/container-to-storage"
                   >
-                    container → storage
+                    Container → Storage
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
-                <MenuItem as={Link} href="/cargo/transshipment-c2c">
+                <MenuItem as={Link} href="/services/transshipment-C2C">
                   Transshipment (C2C)
                 </MenuItem>
-                <MenuItem as={Link} href="/cargo/vessel-barge">
+                <MenuItem as={Link} href="/services/vessel-barge">
                   Vessel/Barge
                 </MenuItem>
-                <MenuItem as={Link} href="/RaportAmaraj">
+                <MenuItem as={Link} href="/services/raport-amaraj">
                   Lashing
                 </MenuItem>
               </MenuList>
             </Menu>
 
-            <Button
-              as={Link}
-              href="/login"
-              colorScheme="teal"
-              size="sm"
-              textDecoration="none"
-              _hover={{ textDecoration: "none" }}
-            >
-              Login
-            </Button>
+            {isAuthenticated ? (
+              <HStack spacing={4}>
+                <Text fontSize="sm" color="gray.600">
+                  Welcome, {session?.user?.name}
+                </Text>
+                <Button
+                  onClick={logout}
+                  colorScheme="red"
+                  size="sm"
+                  textDecoration="none"
+                  _hover={{ textDecoration: "none" }}
+                >
+                  Logout
+                </Button>
+              </HStack>
+            ) : (
+              <Button
+                onClick={handleLoginOpen}
+                colorScheme="teal"
+                size="sm"
+                textDecoration="none"
+                _hover={{ textDecoration: "none" }}
+              >
+                Login
+              </Button>
+            )}
           </HStack>
 
           <IconButton
@@ -209,6 +261,11 @@ export default function Header() {
           </Drawer>
         </Flex>
       </Box>
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleLoginClose}
+        onRegister={handleRegister}
+      />
     </Box>
   );
 }
