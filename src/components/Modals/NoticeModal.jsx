@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/react";
 import { InfoIcon } from "@chakra-ui/icons";
 
+// NOTICE MODAL COMPONENT
 export default function NoticeModal() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [hasSeen, setHasSeen] = useState(false);

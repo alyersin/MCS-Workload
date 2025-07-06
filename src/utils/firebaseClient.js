@@ -14,3 +14,5 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 export { db, auth };
+
+// FIREBASE CLIENT UTILS

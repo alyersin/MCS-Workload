@@ -31,6 +31,7 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginModal from "@/components/Auth/LoginModal";
 import { useRouter } from "next/navigation";
 
+// HEADER COMPONENT
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isLoginModalOpen, setLoginModalOpen] = React.useState(false);

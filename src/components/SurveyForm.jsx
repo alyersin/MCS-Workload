@@ -18,6 +18,7 @@ import {
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 
+// SURVEY FORM COMPONENT
 export default function SurveyForm({
   title,
   fields,

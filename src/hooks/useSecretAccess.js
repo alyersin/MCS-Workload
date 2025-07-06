@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useToast } from "@chakra-ui/react";
 
+// SECRET ACCESS HOOK
 export function useSecretAccess(pageName) {
   const [secretInput, setSecretInput] = useState("");
   const [accessGranted, setAccessGranted] = useState(false);

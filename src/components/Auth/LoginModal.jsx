@@ -26,6 +26,7 @@ import { signIn } from "next-auth/react";
 import { db } from "@/utils/firebaseClient";
 import { doc, setDoc } from "firebase/firestore";
 
+// LOGIN MODAL COMPONENT
 export default function LoginModal({ isOpen, onClose }) {
   const [mode, setMode] = useState("login"); // 'login' | 'register' | 'forgot'
   const [loginCredentials, setLoginCredentials] = useState({
@@ -45,7 +46,7 @@ export default function LoginModal({ isOpen, onClose }) {
   const toast = useToast();
   const inputBg = useColorModeValue("gray.50", "gray.600");
 
-  // Login logic
+  // LOGIN LOGIC
   const handleLoginInputChange = (e) => {
     const { name, value } = e.target;
     setLoginCredentials((prev) => ({ ...prev, [name]: value }));
@@ -91,7 +92,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
   };
 
-  // Register logic
+  // REGISTER LOGIC
   const handleRegisterInputChange = (e) => {
     const { name, value } = e.target;
     setRegisterForm((prev) => ({ ...prev, [name]: value }));
@@ -175,7 +176,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
   };
 
-  // Forgot password logic
+  // FORGOT PASSWORD LOGIC
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (!resetEmail) {

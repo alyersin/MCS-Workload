@@ -18,6 +18,7 @@ import {
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
 
+// LASHING SERVICE PAGE
 const loadingLocationOptions = [
   "DB Schenker",
   "DP World",

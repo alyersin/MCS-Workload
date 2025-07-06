@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Box, Spinner, Center, Text } from "@chakra-ui/react";
 
+// PROTECTED ROUTE COMPONENT
 export default function ProtectedRoute({
   children,
   requiredRole = null,

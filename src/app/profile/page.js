@@ -39,6 +39,7 @@ import { db } from "@/utils/firebaseClient";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
+// USER PROFILE PAGE
 export default function ProfilePage() {
   const { session, isAuthenticated } = useAuth();
   const toast = useToast();

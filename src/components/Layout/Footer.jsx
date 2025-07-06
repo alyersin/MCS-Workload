@@ -9,6 +9,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 
+// FOOTER COMPONENT
 export default function Footer() {
   return (
     <Box as="footer" py={8} bg={useColorModeValue("gray.100", "gray.900")}>

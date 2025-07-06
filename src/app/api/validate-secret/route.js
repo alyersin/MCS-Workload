@@ -1,3 +1,4 @@
+// VALIDATE SECRET ROUTE
 export async function POST(request) {
   const { userSecret } = await request.json();
 

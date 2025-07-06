@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { jsPDF } from "jspdf";
 
+// SEND PDF ROUTE
 export async function POST(request) {
   const formData = await request.json();
 
   // 1. Generate PDF (web form-like layout)
   const doc = new jsPDF();
-  // Teal header bar
+  // TEAL HEADER BAR
   doc.setFillColor(54, 162, 185); // Teal
   doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
   doc.setFontSize(18);
@@ -15,7 +16,7 @@ export async function POST(request) {
   doc.setFont("helvetica", "bold");
   doc.text("Survey Form Submission", 105, 13, { align: "center" });
 
-  // Service name subtitle
+  // SERVICE NAME SUBTITLE
   if (formData._serviceName) {
     const serviceName = String(formData._serviceName)
       .replace(/([A-Z])/g, " $1")
@@ -26,7 +27,7 @@ export async function POST(request) {
     doc.text(serviceName + " Form", 105, 21, { align: "center" });
   }
 
-  // Form container (rounded box)
+  // FORM CONTAINER
   doc.setDrawColor(220);
   doc.setFillColor(245, 247, 250); // Light background
   doc.roundedRect(10, 30, 190, 240, 6, 6, "F");
@@ -36,7 +37,7 @@ export async function POST(request) {
   doc.setTextColor(33, 37, 41); // Dark text
   doc.setFont("helvetica", "normal");
 
-  // Group fields for logical sections (customize as needed)
+  // GROUP FIELDS
   const sections = [
     {
       title: "General Information",
@@ -61,7 +62,7 @@ export async function POST(request) {
   ];
 
   for (const section of sections) {
-    // Section header
+    // SECTION HEADER
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(54, 162, 185); // Teal
@@ -75,14 +76,14 @@ export async function POST(request) {
       const value = formData[key];
       if (value && value !== "") {
         sectionHasContent = true;
-        // Format label: capitalize and add spaces before uppercase letters
+        // FORMAT LABEL
         const label = key
           .replace(/([A-Z])/g, " $1")
           .replace(/^./, (str) => str.toUpperCase());
         doc.setFont("helvetica", "bold");
         doc.text(`${label}:`, 25, y);
         doc.setFont("helvetica", "normal");
-        // Multi-line for textarea
+        // MULTILINE TEXTAREA
         if (key === "surveyFindings" && String(value).length > 60) {
           const lines = doc.splitTextToSize(String(value), 140);
           doc.text(lines, 60, y);
@@ -102,7 +103,7 @@ export async function POST(request) {
     // Add page break if near bottom
     if (y > 260) {
       doc.addPage();
-      // Redraw header and form box for new page
+      // REDRAW HEADER
       doc.setFillColor(54, 162, 185);
       doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
       doc.setFontSize(18);

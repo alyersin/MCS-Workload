@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import NoticeModal from "@/components/Modals/NoticeModal";
 import StyledHamburger from "@/components/UI/StyledHamburger";
 
+// MAIN LANDING PAGE
 export default function Home() {
   const router = useRouter();
 

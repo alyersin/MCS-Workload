@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
+// STYLED HAMBURGER COMPONENT
 export default function StyledHamburger({ onContactClick, closeMenu }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isTransloadingOpen, setIsTransloadingOpen] = useState(false);
@@ -220,7 +221,7 @@ const StyledWrapper = styled.div`
     display: none;
   }
 
-  /* Submenu styles for Transloading */
+  // SUBMENU STYLES FOR TRANSLOADING
   .transloading-wrapper {
     position: absolute;
     top: 50%;
@@ -287,13 +288,13 @@ const StyledWrapper = styled.div`
     opacity: 1;
     pointer-events: auto;
   }
-  /* Only show submenu when open */
+  // SHOW SUBMENU WHEN OPEN
   .transloading-wrapper:not(:has(.transloading-sub)) .transloading-sub {
     opacity: 0;
     pointer-events: none;
   }
 
-  /* Submenu styles for Stuffing */
+  // SUBMENU STYLES FOR STUFFING
   .stuffing-wrapper {
     position: absolute;
     top: 50%;
@@ -351,7 +352,7 @@ const StyledWrapper = styled.div`
     pointer-events: auto;
   }
 
-  /* Submenu styles for Stripping */
+  // SUBMENU STYLES FOR STRIPPING
   .stripping-wrapper {
     position: absolute;
     top: 50%;

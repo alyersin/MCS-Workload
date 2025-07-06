@@ -1,4 +1,4 @@
-// theme.js
+// THEME CONFIG
 "use client";
 import { extendTheme } from "@chakra-ui/react";
 

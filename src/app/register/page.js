@@ -20,6 +20,7 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useRouter } from "next/navigation";
 
+// USER REGISTRATION PAGE
 export default function RegisterPage() {
   const [form, setForm] = useState({
     email: "",

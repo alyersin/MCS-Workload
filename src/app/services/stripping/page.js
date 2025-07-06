@@ -19,6 +19,7 @@ import {
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
 
+// STRIPPING SERVICE PAGE
 const operatorOptions = [
   "DB Schenker",
   "DPS World",
