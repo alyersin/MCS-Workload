@@ -96,13 +96,13 @@ const dropdownOptions = {
   principalName: principalOptions,
 };
 
-export default function TransshipmentC2C() {
+export default function TruckContainer() {
   return (
     <SurveyForm
-      title="Transshipment C2C Survey"
+      title="Transloading Truck-Container Survey"
       fields={fields}
       dropdownOptions={dropdownOptions}
-      secretAccess="TransshipmentC2C"
+      secretAccess="TransloadingTruckContainer"
     />
   );
 }

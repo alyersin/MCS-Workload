@@ -11,8 +11,6 @@ const handler = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("ENV KEY:", process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
-
         const response = await fetch(
           `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
           {
@@ -37,34 +35,40 @@ const handler = NextAuth({
 
         return {
           id: userRecord.uid,
+          uid: userRecord.uid,
           email: userRecord.email,
           name: userRecord.displayName || userRecord.email,
         };
       },
     }),
   ],
+
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
+
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
+        token.uid = user.uid || user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id;
-      }
+      session.user = {
+        ...session.user,
+        uid: token.uid || token.sub || null,
+      };
       return session;
     },
   },
+
   pages: {
     signIn: "/login",
     error: "/login",
   },
+
   secret: process.env.NEXTAUTH_SECRET,
 });
 

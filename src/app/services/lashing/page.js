@@ -40,25 +40,25 @@ export default function RaportAmaraj() {
 
   const options = {
     loadingLocation: [
-      "DP World",
-      "Life Logistics",
-      "Sea Container Services",
-      "Port Shipping & Engineering",
-      "SOCEP",
-      "Fast Freight",
       "DB Schenker",
+      "DP World",
+      "Fast Freight",
+      "Life Logistics",
+      "Port Shipping & Engineering",
       "Romalexys",
+      "Sea Container Services",
+      "SOCEP",
     ],
     storagePrior: ["Road trailer", "Terminal storage"],
     stowagePerformedBy: [
-      "DP World SRL",
-      "Life Logistics SRL",
-      "Sea Container Services SRL",
-      "Port Shipping & Engineering SRL",
-      "SOCEP SA",
-      "Fast Freight SRL",
       "DB Schenker",
+      "DP World SRL",
+      "Fast Freight SRL",
+      "Life Logistics SRL",
+      "Port Shipping & Engineering SRL",
       "Romalexys SRL",
+      "Sea Container Services SRL",
+      "SOCEP SA",
     ],
   };
 

@@ -1,0 +1,136 @@
+import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
+import { jsPDF } from "jspdf";
+
+export async function POST(request) {
+  const formData = await request.json();
+
+  // 1. Generate PDF (web form-like layout)
+  const doc = new jsPDF();
+  // Teal header bar
+  doc.setFillColor(54, 162, 185); // Teal
+  doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text("Survey Form Submission", 105, 17, { align: "center" });
+
+  // Form container (rounded box)
+  doc.setDrawColor(220);
+  doc.setFillColor(245, 247, 250); // Light background
+  doc.roundedRect(10, 30, 190, 240, 6, 6, "F");
+
+  let y = 45;
+  doc.setFontSize(12);
+  doc.setTextColor(33, 37, 41); // Dark text
+  doc.setFont("helvetica", "normal");
+
+  // Group fields for logical sections (customize as needed)
+  const sections = [
+    {
+      title: "General Information",
+      fields: ["report", "date"],
+    },
+    {
+      title: "Port & Operator",
+      fields: ["portArea", "operator", "customOperator"],
+    },
+    {
+      title: "Principal",
+      fields: ["principalName", "customPrincipal"],
+    },
+    {
+      title: "Cargo Details",
+      fields: ["cargoDescription", "grossWeight", "shipper", "consignee"],
+    },
+    {
+      title: "Survey Findings",
+      fields: ["surveyFindings"],
+    },
+  ];
+
+  for (const section of sections) {
+    // Section header
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(54, 162, 185); // Teal
+    doc.text(section.title, 20, y);
+    y += 7;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(33, 37, 41);
+    let sectionHasContent = false;
+    for (const key of section.fields) {
+      const value = formData[key];
+      if (value && value !== "") {
+        sectionHasContent = true;
+        // Format label: capitalize and add spaces before uppercase letters
+        const label = key
+          .replace(/([A-Z])/g, " $1")
+          .replace(/^./, (str) => str.toUpperCase());
+        doc.setFont("helvetica", "bold");
+        doc.text(`${label}:`, 25, y);
+        doc.setFont("helvetica", "normal");
+        // Multi-line for textarea
+        if (key === "surveyFindings" && String(value).length > 60) {
+          const lines = doc.splitTextToSize(String(value), 140);
+          doc.text(lines, 60, y);
+          y += lines.length * 7;
+        } else {
+          doc.text(String(value), 60, y);
+          y += 7;
+        }
+      }
+    }
+    if (sectionHasContent) {
+      y += 2;
+      doc.setDrawColor(220);
+      doc.line(22, y, 195, y);
+      y += 5;
+    }
+    // Add page break if near bottom
+    if (y > 260) {
+      doc.addPage();
+      // Redraw header and form box for new page
+      doc.setFillColor(54, 162, 185);
+      doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
+      doc.setFontSize(18);
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.text("Survey Form Submission", 105, 17, { align: "center" });
+      doc.setDrawColor(220);
+      doc.setFillColor(245, 247, 250);
+      doc.roundedRect(10, 30, 190, 240, 6, 6, "F");
+      y = 45;
+      doc.setFontSize(12);
+      doc.setTextColor(33, 37, 41);
+      doc.setFont("helvetica", "normal");
+    }
+  }
+  const pdfBuffer = doc.output("arraybuffer");
+
+  // 2. Send Email
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to: "alyersin@yahoo.com",
+    subject: "New Survey Form Submission",
+    text: "See attached PDF for details.",
+    attachments: [
+      {
+        filename: "submission.pdf",
+        content: Buffer.from(pdfBuffer),
+        contentType: "application/pdf",
+      },
+    ],
+  });
+
+  return NextResponse.json({ success: true });
+}

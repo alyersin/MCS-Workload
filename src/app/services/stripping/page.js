@@ -96,13 +96,13 @@ const dropdownOptions = {
   principalName: principalOptions,
 };
 
-export default function TransshipmentC2C() {
+export default function Stripping() {
   return (
     <SurveyForm
-      title="Transshipment C2C Survey"
+      title="Stripping Survey"
       fields={fields}
       dropdownOptions={dropdownOptions}
-      secretAccess="TransshipmentC2C"
+      secretAccess="Stripping"
     />
   );
 }

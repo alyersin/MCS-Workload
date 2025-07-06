@@ -23,6 +23,8 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { signIn } from "next-auth/react";
+import { db } from "@/utils/firebaseClient";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function LoginModal({ isOpen, onClose }) {
   const [mode, setMode] = useState("login"); // 'login' | 'register' | 'forgot'
@@ -146,6 +148,10 @@ export default function LoginModal({ isOpen, onClose }) {
           isClosable: true,
         });
       } else {
+        await setDoc(doc(db, "users", data.localId), {
+          email: registerForm.email,
+          createdAt: new Date(),
+        });
         toast({
           title: "Registration successful!",
           description: "You can now log in.",

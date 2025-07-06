@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 
 export default function StyledHamburger({ onContactClick, closeMenu }) {
@@ -6,6 +6,13 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
   const [isTransloadingOpen, setIsTransloadingOpen] = useState(false);
   const [isStuffingOpen, setIsStuffingOpen] = useState(false);
   const [isStrippingOpen, setIsStrippingOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -53,7 +60,7 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
             Stripping
           </a>
           {isStrippingOpen && (
-            <a href="#" className="stripping-sub">
+            <a href="/services/stripping/" className="stripping-sub">
               Container Storage
             </a>
           )}
@@ -63,7 +70,7 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
             Stuffing
           </a>
           {isStuffingOpen && (
-            <a href="#" className="stuffing-sub">
+            <a href="/services/stuffing/" className="stuffing-sub">
               Storage Container
             </a>
           )}
@@ -78,24 +85,40 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
           </a>
           {isTransloadingOpen && (
             <>
-              <a href="#" className="transloading-sub sub1">
+              <a
+                href="/services/transloading/container-truck"
+                className="transloading-sub sub1"
+              >
                 Container Truck
               </a>
-              <a href="#" className="transloading-sub sub2">
+              <a
+                href="/services/transloading/truck-container"
+                className="transloading-sub sub2"
+              >
                 Truck Container
               </a>
             </>
           )}
         </div>
         <a
-          href="/services/raport-amaraj"
+          href="/services/lashing"
           rel="noopener noreferrer"
           className="menu-item item5"
         >
           Lashing
         </a>
-        <a href="#" rel="noopener noreferrer" className="menu-item item6">
+        <a
+          href="/services/vessel-barge/"
+          rel="noopener noreferrer"
+          className="menu-item item6"
+        >
           Vessel/Barge
+        </a>
+        <a href="/services/stripping" className="menu-item item7">
+          Stripping
+        </a>
+        <a href="/services/stuffing" className="menu-item item8">
+          Stuffing
         </a>
       </nav>
     </StyledWrapper>
