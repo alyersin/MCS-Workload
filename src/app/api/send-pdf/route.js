@@ -13,7 +13,18 @@ export async function POST(request) {
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.text("Survey Form Submission", 105, 17, { align: "center" });
+  doc.text("Survey Form Submission", 105, 13, { align: "center" });
+
+  // Service name subtitle
+  if (formData._serviceName) {
+    const serviceName = String(formData._serviceName)
+      .replace(/([A-Z])/g, " $1")
+      .replace(/[-_]/g, " ")
+      .replace(/^./, (str) => str.toUpperCase());
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "normal");
+    doc.text(serviceName + " Form", 105, 21, { align: "center" });
+  }
 
   // Form container (rounded box)
   doc.setDrawColor(220);

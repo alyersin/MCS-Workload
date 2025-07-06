@@ -108,7 +108,7 @@ export default function SurveyForm({
       await fetch("/api/send-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, _serviceName: secretAccess }),
       });
       toast({
         title: "Form submitted and emailed successfully",
