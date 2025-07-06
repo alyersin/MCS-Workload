@@ -9,7 +9,7 @@ export async function POST(request) {
   // 1. Generate PDF (web form-like layout)
   const doc = new jsPDF();
   // TEAL HEADER BAR
-  doc.setFillColor(54, 162, 185); // Teal
+  doc.setFillColor(54, 162, 185);
   doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
@@ -29,12 +29,12 @@ export async function POST(request) {
 
   // FORM CONTAINER
   doc.setDrawColor(220);
-  doc.setFillColor(245, 247, 250); // Light background
+  doc.setFillColor(245, 247, 250);
   doc.roundedRect(10, 30, 190, 240, 6, 6, "F");
 
   let y = 45;
   doc.setFontSize(12);
-  doc.setTextColor(33, 37, 41); // Dark text
+  doc.setTextColor(33, 37, 41);
   doc.setFont("helvetica", "normal");
 
   // GROUP FIELDS
@@ -65,7 +65,7 @@ export async function POST(request) {
     // SECTION HEADER
     doc.setFontSize(13);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(54, 162, 185); // Teal
+    doc.setTextColor(54, 162, 185);
     doc.text(section.title, 20, y);
     y += 7;
     doc.setFontSize(12);
@@ -100,7 +100,6 @@ export async function POST(request) {
       doc.line(22, y, 195, y);
       y += 5;
     }
-    // Add page break if near bottom
     if (y > 260) {
       doc.addPage();
       // REDRAW HEADER
