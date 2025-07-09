@@ -131,7 +131,7 @@ export async function POST(request) {
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
-    to: "alyersin@yahoo.com",
+    to: "alyersin@yahoo.com, survey@mcs-i.ro",
     subject: "New Survey Form Submission",
     text: "See attached PDF for details.",
     attachments: [
