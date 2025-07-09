@@ -15,7 +15,7 @@ export function useAuth() {
 
   const logout = async () => {
     await signOut({ redirect: false });
-    router.push("/login");
+    router.push("/");
   };
 
   const requireAuth = (callback) => {
