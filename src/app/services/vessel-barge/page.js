@@ -20,6 +20,8 @@ import {
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 // VESSEL-BARGE SERVICE PAGE
 const operatorOptions = [
@@ -33,12 +35,25 @@ const operatorOptions = [
   "SOCEP",
   "Custom",
 ];
-const portAreaOptions = ["CONSTANTZA SOUTH PORT", "CONSTANTZA NORTH PORT"];
+const portAreaOptions = [
+  "CONSTANTZA SOUTH PORT",
+  "CONSTANTZA NORTH PORT",
+  "MIDIA PORT",
+  "MANGALIA PORT",
+  "Custom Location",
+];
 
 const fields = [
-  { name: "report", label: "Report", type: "input", required: false },
+  { name: "report", label: "Report no.", type: "input", required: false },
   { name: "vesselName", label: "Vessel Name", type: "input", required: true },
   { name: "portArea", label: "Port Area", type: "select", required: true },
+  {
+    name: "customPortArea",
+    label: "Custom Location Details",
+    type: "customPortArea",
+    required: false,
+    placeholder: "Enter custom location details",
+  },
   { name: "operator", label: "Operator", type: "select", required: true },
   {
     name: "customOperator",
@@ -61,36 +76,34 @@ const fields = [
     required: true,
   },
   {
-    name: "cargoDescription",
-    label: "Cargo Description",
-    type: "input",
+    name: "cargoGroups",
+    label: "Cargoes (Description, Packages, Gross Weight, Shipper, Consignee)",
+    type: "dynamicCargoGroup",
     required: false,
-  },
-  {
-    name: "grossWeight",
-    label: "Gross Weight",
-    type: "input",
-    required: false,
-  },
-  {
-    name: "shippers",
-    label: "Shippers",
-    type: "dynamicList",
-    required: false,
-    placeholder: "Enter shipper",
-  },
-  {
-    name: "consignees",
-    label: "Consignees",
-    type: "dynamicList",
-    required: false,
-    placeholder: "Enter consignee",
+    descriptionPlaceholder: "Cargo Description",
+    packagesPlaceholder: "Packages",
+    weightPlaceholder: "Gross Weight",
+    shipperPlaceholder: "Shipper",
+    consigneePlaceholder: "Consignee",
   },
   {
     name: "surveyFindings",
     label: "Survey Findings",
     type: "textarea",
     required: true,
+  },
+  {
+    name: "otherDetails",
+    label: "Other Details",
+    type: "textarea",
+    required: false,
+  },
+  {
+    name: "attachments",
+    label: "Upload Documents / Images (ZIP files)",
+    type: "file",
+    required: false,
+    accept: "image/*,application/pdf,application/zip,.zip",
   },
 ];
 

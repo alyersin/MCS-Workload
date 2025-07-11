@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -38,6 +38,7 @@ import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import { db } from "@/utils/firebaseClient";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { signInFirebaseWithCustomToken } from "@/utils/ensureFirebaseAuth";
 
 // USER PROFILE PAGE
 export default function ProfilePage() {
@@ -52,6 +53,40 @@ export default function ProfilePage() {
     position: "",
   });
 
+  // ENSURE FIREBASE AUTH SESSION
+  useEffect(() => {
+    if (isAuthenticated) {
+      signInFirebaseWithCustomToken();
+    }
+  }, [isAuthenticated]);
+
+  // FETCH USER PROFILE FROM FIRESTORE ON MOUNT
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const auth = getAuth();
+        const currentUser = auth.currentUser;
+        if (!currentUser) return;
+        const uid = currentUser.uid;
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setProfileData((prev) => ({
+            ...prev,
+            ...data,
+            name: data.name || prev.name,
+            email: session?.user?.email || prev.email,
+          }));
+        }
+      } catch (error) {
+        // ERROR FETCHING PROFILE
+      }
+    };
+    if (isAuthenticated) fetchProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, session?.user?.email]);
+
   const bgColor = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
 
@@ -63,11 +98,11 @@ export default function ProfilePage() {
       const uid = currentUser.uid;
 
       const userRef = doc(db, "users", uid);
-      const { name, phone, company, position } = profileData;
+      const { name, phone, company, position, email } = profileData;
 
       await setDoc(
         userRef,
-        { name, phone, company, position },
+        { name, phone, company, position, email },
         { merge: true }
       );
 

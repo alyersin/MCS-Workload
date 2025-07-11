@@ -32,7 +32,13 @@ const operatorOptions = [
   "SOCEP",
   "Custom",
 ];
-const portAreaOptions = ["CONSTANTZA SOUTH PORT", "CONSTANTZA NORTH PORT"];
+const portAreaOptions = [
+  "CONSTANTZA SOUTH PORT",
+  "CONSTANTZA NORTH PORT",
+  "MIDIA PORT",
+  "MANGALIA PORT",
+  "Custom Location",
+];
 const principalOptions = [
   "Eastship Projects & Logistics SRL",
   "Life Logistics SRL",
@@ -40,8 +46,15 @@ const principalOptions = [
 ];
 
 const fields = [
-  { name: "report", label: "Report", type: "input", required: false },
+  { name: "report", label: "Report no.", type: "input", required: false },
   { name: "portArea", label: "Port Area", type: "select", required: true },
+  {
+    name: "customPortArea",
+    label: "Custom Location Details",
+    type: "customPortArea",
+    required: false,
+    placeholder: "Enter custom location details",
+  },
   { name: "operator", label: "Operator", type: "select", required: true },
   {
     name: "customOperator",
@@ -89,6 +102,19 @@ const fields = [
     label: "Survey Findings",
     type: "textarea",
     required: true,
+  },
+  {
+    name: "otherDetails",
+    label: "Other Details",
+    type: "textarea",
+    required: false,
+  },
+  {
+    name: "attachments",
+    label: "Upload Documents / Images (ZIP files)",
+    type: "file",
+    required: false,
+    accept: "image/*,application/pdf,application/zip,.zip",
   },
 ];
 

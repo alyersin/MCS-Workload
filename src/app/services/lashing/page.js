@@ -99,6 +99,19 @@ const fields = [
     type: "input",
     required: true,
   },
+  {
+    name: "otherDetails",
+    label: "Other Details",
+    type: "textarea",
+    required: false,
+  },
+  {
+    name: "attachments",
+    label: "Upload Documents / Images (ZIP files)",
+    type: "file",
+    required: false,
+    accept: "image/*,application/pdf,application/zip,.zip",
+  },
 ];
 
 const dropdownOptions = {

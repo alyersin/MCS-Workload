@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { jsPDF } from "jspdf";
+import { getAuth, signInWithCustomToken } from "firebase/auth";
+
+export async function signInFirebaseWithCustomToken() {
+  const res = await fetch("/api/firebase-custom-token");
+  const { token } = await res.json();
+  const auth = getAuth();
+  await signInWithCustomToken(auth, token);
+}
 
 // SEND PDF ROUTE
 export async function POST(request) {
@@ -131,7 +139,8 @@ export async function POST(request) {
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
-    to: "alyersin@yahoo.com, survey@mcs-i.ro",
+    // survey@mcs-i.ro
+    to: "alyersin@yahoo.com",
     subject: "New Survey Form Submission",
     text: "See attached PDF for details.",
     attachments: [
