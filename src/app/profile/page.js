@@ -32,12 +32,14 @@ import {
   StatNumber,
   StatHelpText,
   StatArrow,
+  Spinner,
+  Center,
 } from "@chakra-ui/react";
 import { useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import { db } from "@/utils/firebaseClient";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { signInFirebaseWithCustomToken } from "@/utils/ensureFirebaseAuth";
 
 // USER PROFILE PAGE
@@ -52,6 +54,7 @@ export default function ProfilePage() {
     company: "",
     position: "",
   });
+  const [loading, setLoading] = useState(true);
 
   // ENSURE FIREBASE AUTH SESSION
   useEffect(() => {
@@ -62,28 +65,27 @@ export default function ProfilePage() {
 
   // FETCH USER PROFILE FROM FIRESTORE ON MOUNT
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const auth = getAuth();
-        const currentUser = auth.currentUser;
-        if (!currentUser) return;
-        const uid = currentUser.uid;
+    setLoading(true);
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const uid = user.uid;
         const userRef = doc(db, "users", uid);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           const data = userSnap.data();
-          setProfileData((prev) => ({
-            ...prev,
-            ...data,
-            name: data.name || prev.name,
-            email: session?.user?.email || prev.email,
-          }));
+          setProfileData({
+            name: data.name || "",
+            email: data.email || session?.user?.email || "",
+            phone: data.phone || "",
+            company: data.company || "",
+            position: data.position || "",
+          });
         }
-      } catch (error) {
-        // ERROR FETCHING PROFILE
+        setLoading(false);
       }
-    };
-    if (isAuthenticated) fetchProfile();
+    });
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, session?.user?.email]);
 
@@ -140,6 +142,14 @@ export default function ProfilePage() {
 
   if (!isAuthenticated) {
     return <ProtectedRoute />;
+  }
+
+  if (loading) {
+    return (
+      <Center minH="100vh">
+        <Spinner size="xl" />
+      </Center>
+    );
   }
 
   return (

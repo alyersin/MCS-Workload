@@ -7,6 +7,7 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
   const [isTransloadingOpen, setIsTransloadingOpen] = useState(false);
   const [isStuffingOpen, setIsStuffingOpen] = useState(false);
   const [isStrippingOpen, setIsStrippingOpen] = useState(false);
+  const [isTransfersOpen, setIsTransfersOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -39,6 +40,11 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
     setIsStrippingOpen((prev) => !prev);
   };
 
+  const handleTransfersClick = (e) => {
+    e.preventDefault();
+    setIsTransfersOpen((prev) => !prev);
+  };
+
   return (
     <StyledWrapper className={isOpen ? "open" : ""}>
       <nav className="menu">
@@ -53,9 +59,27 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
           START NEW PROJECT
         </label>
 
-        <a href="/services/transshipment-C2C" className="menu-item item1">
-          C2C Transfer
-        </a>
+        <div className="menu-item transfers-wrapper item9">
+          <a href="#" className="transfers-main" onClick={handleTransfersClick}>
+            Transfers
+          </a>
+          {isTransfersOpen && (
+            <>
+              <a
+                href="/services/stripping-restuffing"
+                className="transfers-sub transfers-sub-top"
+              >
+                Stripping & Restuffing
+              </a>
+              <a
+                href="/services/transshipment-C2C"
+                className="transfers-sub transfers-sub-bottom"
+              >
+                C2C Transfer
+              </a>
+            </>
+          )}
+        </div>
         <div className="menu-item item2 stripping-wrapper">
           <a href="#" className="stripping-main" onClick={handleStrippingClick}>
             Stripping
@@ -188,7 +212,7 @@ const StyledWrapper = styled.div`
     transform: translate(-50%, -50%) scale(1);
   }
 
-  &.open .item1 {
+  &.open .item6 {
     transform: translate(-50%, -50%) rotate(0deg) translate(120px) rotate(0deg);
   }
   &.open .item2 {
@@ -210,6 +234,10 @@ const StyledWrapper = styled.div`
   &.open .item6 {
     transform: translate(-50%, -50%) rotate(300deg) translate(120px)
       rotate(-300deg);
+  }
+  &.open .item9 {
+    transform: translate(-50%, -50%) rotate(360deg) translate(120px)
+      rotate(-360deg);
   }
 
   .menu-item:hover {
@@ -402,7 +430,7 @@ const StyledWrapper = styled.div`
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
     opacity: 1;
     pointer-events: auto;
-    left: 90px;
+    left: 96px;
     top: 70px;
     transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     z-index: 3;
@@ -415,5 +443,70 @@ const StyledWrapper = styled.div`
   .stripping-sub {
     cursor: pointer;
     pointer-events: auto;
+  }
+
+  // SUBMENU STYLES FOR TRANSFERS
+  .transfers-wrapper {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    box-shadow: none;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .transfers-main {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: #319795;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    pointer-events: auto;
+    z-index: 4;
+    transition: background 0.3s;
+    position: relative;
+  }
+  .transfers-main:hover {
+    background: #2c7a7b;
+  }
+  .transfers-sub {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #38b2ac;
+    color: white;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+    opacity: 1;
+    pointer-events: auto;
+    left: 90px;
+    transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    z-index: 3;
+    cursor: pointer;
+    pointer-events: auto;
+  }
+  .transfers-sub-top {
+    top: -42px;
+    left: 120px;
+  }
+  .transfers-sub-bottom {
+    top: 70px;
+    left: 120px;
   }
 `;

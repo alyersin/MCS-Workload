@@ -17,6 +17,7 @@ import {
 } from "@chakra-ui/react";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
+import { onAuthStateChanged, getAuth } from "firebase/auth";
 
 // SURVEY FORM COMPONENT
 export default function SurveyForm({
