@@ -28,7 +28,7 @@ import { doc, setDoc } from "firebase/firestore";
 
 // LOGIN MODAL COMPONENT
 export default function LoginModal({ isOpen, onClose }) {
-  const [mode, setMode] = useState("login"); // 'login' | 'register' | 'forgot'
+  const [mode, setMode] = useState("login");
   const [loginCredentials, setLoginCredentials] = useState({
     email: "",
     password: "",
@@ -263,7 +263,7 @@ export default function LoginModal({ isOpen, onClose }) {
                     bg={inputBg}
                     borderRadius="md"
                     focusBorderColor="teal.400"
-                    placeholder="Enter your email"
+                    // placeholder="Enter your email"
                   />
                 </FormControl>
                 <FormControl isRequired>
@@ -277,7 +277,7 @@ export default function LoginModal({ isOpen, onClose }) {
                       bg={inputBg}
                       borderRadius="md"
                       focusBorderColor="teal.400"
-                      placeholder="Enter your password"
+                      // placeholder="Enter your password"
                     />
                     <InputRightElement>
                       <IconButton
@@ -285,7 +285,10 @@ export default function LoginModal({ isOpen, onClose }) {
                           showPassword ? "Hide password" : "Show password"
                         }
                         icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                        onClick={() => setShowPassword(!showPassword)}
+                        // SHOW PASSWORD WHILE MOUSE IS HELD
+                        onMouseDown={() => setShowPassword(true)}
+                        onMouseUp={() => setShowPassword(false)}
+                        onMouseLeave={() => setShowPassword(false)}
                         variant="ghost"
                         size="sm"
                       />
@@ -303,7 +306,7 @@ export default function LoginModal({ isOpen, onClose }) {
                       bg={inputBg}
                       borderRadius="md"
                       focusBorderColor="teal.400"
-                      placeholder="Confirm your password"
+                      // placeholder="Confirm your password"
                     />
                     <InputRightElement>
                       <IconButton
@@ -315,9 +318,9 @@ export default function LoginModal({ isOpen, onClose }) {
                         icon={
                           showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />
                         }
-                        onClick={() =>
-                          setShowConfirmPassword(!showConfirmPassword)
-                        }
+                        onMouseDown={() => setShowConfirmPassword(true)}
+                        onMouseUp={() => setShowConfirmPassword(false)}
+                        onMouseLeave={() => setShowConfirmPassword(false)}
                         variant="ghost"
                         size="sm"
                       />
@@ -357,7 +360,7 @@ export default function LoginModal({ isOpen, onClose }) {
                     bg={inputBg}
                     borderRadius="md"
                     focusBorderColor="teal.400"
-                    placeholder="Enter your email"
+                    // placeholder="Enter your email"
                   />
                 </FormControl>
                 <Button
@@ -393,7 +396,7 @@ export default function LoginModal({ isOpen, onClose }) {
                     bg={inputBg}
                     borderRadius="md"
                     focusBorderColor="teal.400"
-                    placeholder="Enter your email"
+                    // placeholder="Enter your email"
                   />
                 </FormControl>
                 <FormControl isRequired>
@@ -407,7 +410,7 @@ export default function LoginModal({ isOpen, onClose }) {
                       bg={inputBg}
                       borderRadius="md"
                       focusBorderColor="teal.400"
-                      placeholder="Enter your password"
+                      // placeholder="Enter your password"
                     />
                     <InputRightElement>
                       <IconButton
@@ -415,7 +418,10 @@ export default function LoginModal({ isOpen, onClose }) {
                           showPassword ? "Hide password" : "Show password"
                         }
                         icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                        onClick={() => setShowPassword(!showPassword)}
+                        // SHOW PASSWORD WHILE MOUSE IS HELD
+                        onMouseDown={() => setShowPassword(true)}
+                        onMouseUp={() => setShowPassword(false)}
+                        onMouseLeave={() => setShowPassword(false)}
                         variant="ghost"
                         size="sm"
                       />

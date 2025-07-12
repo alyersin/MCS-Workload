@@ -86,7 +86,6 @@ export default function ProfilePage() {
       }
     });
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, session?.user?.email]);
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -209,7 +208,6 @@ export default function ProfilePage() {
                   </Card>
                 </Grid>
 
-                {/* Recent Activity */}
                 <Card bg={cardBg} mt={6}>
                   <CardHeader>
                     <Heading size="md">Recent Activity</Heading>
@@ -252,13 +250,11 @@ export default function ProfilePage() {
                 </Card>
               </TabPanel>
 
-              {/* Profile Tab */}
               <TabPanel>
                 <Grid
                   templateColumns={{ base: "1fr", lg: "300px 1fr" }}
                   gap={8}
                 >
-                  {/* Profile Picture */}
                   <Card bg={cardBg}>
                     <CardBody>
                       <VStack spacing={4}>
@@ -276,7 +272,6 @@ export default function ProfilePage() {
                     </CardBody>
                   </Card>
 
-                  {/* Profile Form */}
                   <Card bg={cardBg}>
                     <CardHeader>
                       <HStack justify="space-between">
@@ -380,7 +375,6 @@ export default function ProfilePage() {
                 </Grid>
               </TabPanel>
 
-              {/* Settings Tab */}
               <TabPanel>
                 <Card bg={cardBg}>
                   <CardHeader>

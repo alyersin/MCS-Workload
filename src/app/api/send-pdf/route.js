@@ -14,7 +14,7 @@ export async function signInFirebaseWithCustomToken() {
 export async function POST(request) {
   const formData = await request.json();
 
-  // 1. Generate PDF (web form-like layout)
+  // 1. Generate PDF
   const doc = new jsPDF();
   // TEAL HEADER BAR
   doc.setFillColor(54, 162, 185);
@@ -139,8 +139,8 @@ export async function POST(request) {
 
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
-    // survey@mcs-i.ro
-    to: "alyersin@yahoo.com",
+    // RECIPIENTS FROM ENV
+    to: process.env.PDF_EMAIL_RECIPIENTS,
     subject: "New Survey Form Submission",
     text: "See attached PDF for details.",
     attachments: [

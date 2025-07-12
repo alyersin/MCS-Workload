@@ -34,10 +34,8 @@ export default function SurveyForm({
     if (field.type === "dynamicList") {
       initialForm[field.name] = [""];
     } else if (field.type === "dynamicPair") {
-      // INIT AS ARRAY OF { description: '', weight: '' }
       initialForm[field.name] = [{ description: "", weight: "" }];
     } else if (field.type === "dynamicCargoGroup") {
-      // INIT AS ARRAY OF { description: '', packages: '', weight: '', shipper: '', consignee: '' }
       initialForm[field.name] = [
         {
           description: "",
@@ -62,7 +60,6 @@ export default function SurveyForm({
   // CARGO GROUP BG COLOR
   const cargoGroupBg = useColorModeValue("gray.50", "gray.700");
 
-  // Secret access logic (use hook instead of local state)
   const { secretInput, setSecretInput, accessGranted, handleSecretSubmit } =
     useSecretAccess(secretAccess);
 
@@ -73,7 +70,6 @@ export default function SurveyForm({
         return form[field.name].some((val) => val.trim() !== "");
       }
       if (field.type === "dynamicPair") {
-        // AT LEAST ONE PAIR HAS NON-EMPTY DESCRIPTION OR WEIGHT
         return form[field.name].some(
           (pair) =>
             (pair.description && pair.description.trim() !== "") ||
@@ -81,7 +77,6 @@ export default function SurveyForm({
         );
       }
       if (field.type === "dynamicCargoGroup") {
-        // AT LEAST ONE GROUP HAS NON-EMPTY DESCRIPTION, WEIGHT, SHIPPER, OR CONSIGNEE
         return form[field.name].some(
           (group) =>
             (group.description && group.description.trim() !== "") ||
@@ -208,7 +203,6 @@ export default function SurveyForm({
       });
       return;
     }
-    // Send form data to /api/send-pdf
     try {
       await fetch("/api/send-pdf", {
         method: "POST",
@@ -240,9 +234,6 @@ export default function SurveyForm({
 
   // FIND FILE FIELD DEFINITION (E.G. ATTACHMENTS)
   const fileField = fields.find((f) => f.type === "file");
-  // DRAG AND DROP FILE UPLOAD HOOK (ONLY ONCE)
-  // REMOVE: const onDrop = (acceptedFiles) => { const file = acceptedFiles[0]; setForm((prev) => ({ ...prev, [fileField?.name]: file })); };
-  // REMOVE: const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop, accept: fileField?.accept || "", multiple: false, disabled: !fileField, });
 
   return (
     <Container maxW="container.md" py={6}>

@@ -26,7 +26,7 @@ export default function NoticeModal() {
       localStorage.setItem("hasSeenNoticeModal", "true");
       setHasSeen(true);
     } else {
-      setHasSeen(true); // show the icon if already seen
+      setHasSeen(true);
     }
   }, [onOpen]);
 
