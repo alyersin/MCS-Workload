@@ -121,12 +121,35 @@ const dropdownOptions = {
 };
 
 export default function RaportAmaraj() {
+  // MAP LASHING FIELDS TO BACKEND EXPECTED FIELDS
+  const handleLashingSubmit = (form) => {
+    const mapped = {
+      report: form.reportNumber,
+      date: form.dateOfLoading,
+      portArea: form.loadingLocation,
+      operator: form.stowagePerformedBy,
+      principalName: form.principal,
+      cargoDescription: form.cargoDescription,
+      grossWeight: form.oversize,
+      shipper: "",
+      consignee: "",
+      surveyFindings: form.otherDetails,
+      // ADD CUSTOM FIELDS IF NEEDED
+      _serviceName: "RaportAmaraj",
+    };
+    fetch("/api/send-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(mapped),
+    });
+  };
   return (
     <SurveyForm
       title="Lashing Report"
       fields={fields}
       dropdownOptions={dropdownOptions}
       secretAccess="RaportAmaraj"
+      onSubmit={handleLashingSubmit}
     />
   );
 }
