@@ -19,6 +19,7 @@ import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { uploadFileWithMeta } from "@/utils/uploadFile";
+import { useAuth } from "@/hooks/useAuth";
 
 // SURVEY FORM COMPONENT
 export default function SurveyForm({
@@ -63,6 +64,7 @@ export default function SurveyForm({
 
   const { secretInput, setSecretInput, accessGranted, handleSecretSubmit } =
     useSecretAccess(secretAccess);
+  const { isAuthenticated, session } = useAuth();
 
   // VALIDATION
   const isFormComplete = fields.every((field) => {
@@ -194,6 +196,17 @@ export default function SurveyForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAuthenticated) {
+      toast({
+        title: "AUTHENTICATION REQUIRED",
+        description: "Please log in to submit this form.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
     if (!isFormComplete) {
       toast({
         title: "Required fields are missing!",
@@ -215,7 +228,8 @@ export default function SurveyForm({
         await uploadFileWithMeta(
           form[fileField.name],
           secretAccess || "unknown-form",
-          dateField
+          dateField,
+          session?.user?.uid // ONLY UID
         );
       }
       await fetch("/api/send-pdf", {
@@ -245,6 +259,27 @@ export default function SurveyForm({
   };
 
   if (!mounted) return null;
+
+  // BLOCK FORM IF NOT AUTHENTICATED
+  if (!isAuthenticated) {
+    return (
+      <Container maxW="container.md" py={6}>
+        <Box
+          borderRadius="2xl"
+          overflow="hidden"
+          boxShadow="lg"
+          bg={bg}
+          p={8}
+          textAlign="center"
+        >
+          <Heading size="md" color="red.500" mb={4}>
+            AUTHENTICATION REQUIRED
+          </Heading>
+          <Box color="gray.600">Please log in to submit this form.</Box>
+        </Box>
+      </Container>
+    );
+  }
 
   // FIND FILE FIELD DEFINITION (E.G. ATTACHMENTS)
   const fileField = fields.find((f) => f.type === "file");
