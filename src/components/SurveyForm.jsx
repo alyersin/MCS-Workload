@@ -18,6 +18,7 @@ import {
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
+import { uploadFileWithMeta } from "@/utils/uploadFile";
 
 // SURVEY FORM COMPONENT
 export default function SurveyForm({
@@ -204,6 +205,19 @@ export default function SurveyForm({
       return;
     }
     try {
+      // UPLOAD FILE IF PRESENT
+      if (fileField && form[fileField.name]) {
+        // TRY TO FIND A DATE FIELD
+        const dateField =
+          form.dateOfLoading ||
+          form.date ||
+          new Date().toISOString().slice(0, 10);
+        await uploadFileWithMeta(
+          form[fileField.name],
+          secretAccess || "unknown-form",
+          dateField
+        );
+      }
       await fetch("/api/send-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -218,7 +232,7 @@ export default function SurveyForm({
       });
     } catch (error) {
       toast({
-        title: "Failed to send email",
+        title: "Failed to send email or upload file",
         status: "error",
         duration: 3000,
         isClosable: true,
