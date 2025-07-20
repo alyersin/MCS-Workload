@@ -272,7 +272,7 @@ export default function SurveyForm({
         // Use XMLHttpRequest for progress
         await new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
-          xhr.open("POST", "http://5.14.89.59/upload");
+          xhr.open("POST", "https://mcs-workload.duckdns.org/upload"); // UPDATED TO USE HTTPS DUCKDNS DOMAIN
           xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
               const percent = Math.round((event.loaded / event.total) * 100);
