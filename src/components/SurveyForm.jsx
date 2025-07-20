@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -14,12 +14,15 @@ import {
   IconButton,
   HStack,
   Container,
+  Progress,
 } from "@chakra-ui/react";
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
-import { uploadFileWithMeta } from "@/utils/uploadFile";
+import { uploadFileWithMeta, uploadFilesWithMeta } from "@/utils/uploadFile";
 import { useAuth } from "@/hooks/useAuth";
+import SecretKeyModal from "@/components/Modals/SecretKeyModal";
+import UploadProgressModal from "@/components/Modals/UploadProgressModal";
 
 // SURVEY FORM COMPONENT
 export default function SurveyForm({
@@ -61,10 +64,19 @@ export default function SurveyForm({
   const inputFocusBorder = "teal.400";
   // CARGO GROUP BG COLOR
   const cargoGroupBg = useColorModeValue("gray.50", "gray.700");
+  // SUBMISSION FOLDER REF (PERSIST ACROSS FILES IN ONE SUBMISSION)
+  const submissionFolderRef = useRef(null);
 
   const { secretInput, setSecretInput, accessGranted, handleSecretSubmit } =
     useSecretAccess(secretAccess);
-  const { isAuthenticated, session } = useAuth();
+  const { isAuthenticated, isLoading, session } = useAuth();
+  // MODAL STATE
+  const [isSecretModalOpen, setSecretModalOpen] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+  // PROGRESS STATE
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // VALIDATION
   const isFormComplete = fields.every((field) => {
@@ -194,7 +206,8 @@ export default function SurveyForm({
     });
   };
 
-  const handleSubmit = async (e) => {
+  // HANDLE FORM SUBMIT (SHOW SECRET MODAL)
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!isAuthenticated) {
       toast({
@@ -209,7 +222,7 @@ export default function SurveyForm({
     }
     if (!isFormComplete) {
       toast({
-        title: "Required fields are missing!",
+        title: "REQUIRED FIELDS MISSING!",
         status: "warning",
         duration: 4000,
         isClosable: true,
@@ -217,50 +230,104 @@ export default function SurveyForm({
       });
       return;
     }
-    try {
-      // UPLOAD FILE IF PRESENT
-      if (fileField && form[fileField.name]) {
-        // TRY TO FIND A DATE FIELD
-        const dateField =
-          form.dateOfLoading ||
-          form.date ||
-          new Date().toISOString().slice(0, 10);
-        await uploadFileWithMeta(
-          form[fileField.name],
-          secretAccess || "unknown-form",
-          dateField,
-          session?.user?.uid // ONLY UID
-        );
-      }
-      await fetch("/api/send-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, _serviceName: secretAccess }),
-      });
-      toast({
-        title: "Form submitted and emailed successfully",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to send email or upload file",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-        position: "top",
-      });
-    }
-    if (onSubmitProp) onSubmitProp(form);
-    // CLEAR FORM FIELDS AFTER SUBMIT
-    setForm(initialForm);
+    setSecretModalOpen(true);
+    setPendingSubmit(true);
   };
 
-  if (!mounted) return null;
+  // HANDLE SECRET KEY SUCCESS
+  const handleSecretSuccess = async () => {
+    // UPLOAD FILES IF PRESENT
+    if (fileField && form[fileField.name]) {
+      const dateField =
+        form.dateOfLoading ||
+        form.date ||
+        new Date().toISOString().slice(0, 10);
+      const files = Array.isArray(form[fileField.name])
+        ? form[fileField.name]
+        : [form[fileField.name]];
+      setUploading(true);
+      setUploadProgress(0);
+      setShowUploadModal(true); // SHOW MODAL
+      // GENERATE UNIQUE FOLDER NAME ONCE PER SUBMISSION
+      if (!submissionFolderRef.current) {
+        const d = new Date();
+        const dateStr = `${String(d.getMonth() + 1).padStart(2, "0")}${String(
+          d.getDate()
+        ).padStart(2, "0")}${d.getFullYear()}`;
+        const unique = Date.now();
+        submissionFolderRef.current = `${dateStr}-${unique}`;
+      }
+      // LOG THE FOLDER NAME USED FOR THIS BATCH
+      console.log(
+        "Uploading with submissionFolder:",
+        submissionFolderRef.current
+      );
+      try {
+        const formData = new FormData();
+        files.forEach((file) => formData.append("file", file));
+        formData.append("formType", secretAccess || "unknown-form");
+        formData.append("date", dateField);
+        formData.append("userId", session?.user?.uid || "unknown-user");
+        formData.append("submissionFolder", submissionFolderRef.current);
+        // Use XMLHttpRequest for progress
+        await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", "http://5.14.89.59/upload");
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const percent = Math.round((event.loaded / event.total) * 100);
+              setUploadProgress(percent);
+            }
+          };
+          xhr.onload = () => {
+            setUploadProgress(100);
+            setTimeout(() => setShowUploadModal(false), 800); // HIDE MODAL
+            resolve();
+          };
+          xhr.onerror = () => {
+            setShowUploadModal(false);
+            reject(new Error("UPLOAD FAILED"));
+          };
+          xhr.send(formData);
+        });
+      } catch (e) {
+        toast({
+          title: "UPLOAD FAILED",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
+        setUploading(false);
+        setUploadProgress(0);
+        setShowUploadModal(false);
+        submissionFolderRef.current = null;
+        return;
+      }
+      setUploading(false);
+      setUploadProgress(100);
+    }
+    await fetch("/api/send-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...form, _serviceName: secretAccess }),
+    });
+    toast({
+      title: "FORM SUBMITTED AND EMAILED SUCCESSFULLY",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top",
+    });
+    if (onSubmitProp) onSubmitProp(form);
+    setForm(initialForm);
+    setPendingSubmit(false);
+    setUploadProgress(0);
+    submissionFolderRef.current = null; // RESET FOR NEXT SUBMISSION
+  };
 
-  // BLOCK FORM IF NOT AUTHENTICATED
+  if (!mounted || isLoading) return null; // SHOW NOTHING WHILE AUTH LOADING
+
   if (!isAuthenticated) {
     return (
       <Container maxW="container.md" py={6}>
@@ -286,460 +353,491 @@ export default function SurveyForm({
 
   return (
     <Container maxW="container.md" py={6}>
-      {!accessGranted && secretAccess && (
-        <Box
-          mb={6}
-          as="form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleSecretSubmit();
-          }}
-        >
-          <FormControl isRequired>
-            <Input
-              placeholder="Enter secret key"
-              value={secretInput}
-              onChange={(e) => setSecretInput(e.target.value)}
-              autoComplete="off"
-            />
-            <Button mt={2} colorScheme="teal" type="submit">
-              Submit
-            </Button>
-          </FormControl>
+      {/* UPLOAD PROGRESS MODAL */}
+      <UploadProgressModal isOpen={showUploadModal} progress={uploadProgress} />
+      {/* SECRET KEY MODAL ON SUBMIT */}
+      <SecretKeyModal
+        isOpen={isSecretModalOpen}
+        onClose={() => setSecretModalOpen(false)}
+        pageName={secretAccess}
+        onSuccess={handleSecretSuccess}
+      />
+      <Box borderRadius="2xl" overflow="hidden" boxShadow="lg" bg={bg}>
+        <Box bg={headerBg} py={4} px={6} textAlign="center">
+          <Heading size="lg" color="white">
+            {title}
+          </Heading>
         </Box>
-      )}
-      {accessGranted && (
-        <Box borderRadius="2xl" overflow="hidden" boxShadow="lg" bg={bg}>
-          <Box bg={headerBg} py={4} px={6} textAlign="center">
-            <Heading size="lg" color="white">
-              {title}
-            </Heading>
-          </Box>
-          <Box as="form" onSubmit={handleSubmit} p={8} spacing={6}>
-            <VStack spacing={5} align="stretch">
-              {fields.map((field) => {
-                if (field.type === "input") {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Input
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder}
-                        type={field.inputType || "text"}
-                      />
-                    </FormControl>
-                  );
-                }
-                if (field.type === "select") {
-                  const opts = dropdownOptions[field.name] || [];
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Select
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder || "Select"}
-                      >
-                        {opts.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  );
-                }
-                if (field.type === "dynamicList") {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <VStack align="stretch" spacing={2}>
-                        {form[field.name].map((val, idx) => (
-                          <HStack key={idx}>
-                            <Input
-                              name={`${field.name}-${idx}`}
-                              value={val}
-                              onChange={(e) =>
-                                handleDynamicChange(
-                                  field.name,
-                                  idx,
-                                  e.target.value
-                                )
-                              }
-                              bg={inputBg}
-                              borderRadius="md"
-                              focusBorderColor={inputFocusBorder}
-                              placeholder={field.placeholder}
+        <Box as="form" onSubmit={handleSubmit} p={8} spacing={6}>
+          <VStack spacing={5} align="stretch">
+            {fields.map((field) => {
+              if (field.type === "input") {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Input
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                      type={field.inputType || "text"}
+                    />
+                  </FormControl>
+                );
+              }
+              if (field.type === "select") {
+                const opts = dropdownOptions[field.name] || [];
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Select
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder || "Select"}
+                    >
+                      {opts.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                );
+              }
+              if (field.type === "dynamicList") {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <VStack align="stretch" spacing={2}>
+                      {form[field.name].map((val, idx) => (
+                        <HStack key={idx}>
+                          <Input
+                            name={`${field.name}-${idx}`}
+                            value={val}
+                            onChange={(e) =>
+                              handleDynamicChange(
+                                field.name,
+                                idx,
+                                e.target.value
+                              )
+                            }
+                            bg={inputBg}
+                            borderRadius="md"
+                            focusBorderColor={inputFocusBorder}
+                            placeholder={field.placeholder}
+                          />
+                          {form[field.name].length === 1 ? (
+                            <IconButton
+                              aria-label={`Add ${field.label}`}
+                              icon={<AddIcon />}
+                              size="sm"
+                              onClick={() => addDynamic(field.name)}
                             />
-                            {form[field.name].length === 1 ? (
-                              <IconButton
-                                aria-label={`Add ${field.label}`}
-                                icon={<AddIcon />}
-                                size="sm"
-                                onClick={() => addDynamic(field.name)}
+                          ) : idx === form[field.name].length - 1 ? (
+                            <IconButton
+                              aria-label={`Add ${field.label}`}
+                              icon={<AddIcon />}
+                              size="sm"
+                              onClick={() => addDynamic(field.name)}
+                            />
+                          ) : (
+                            <IconButton
+                              aria-label={`Remove ${field.label}`}
+                              icon={<MinusIcon />}
+                              size="sm"
+                              onClick={() => removeDynamic(field.name, idx)}
+                            />
+                          )}
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </FormControl>
+                );
+              }
+              if (field.type === "dynamicPair") {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <VStack align="stretch" spacing={2}>
+                      {form[field.name].map((val, idx) => (
+                        <HStack key={idx}>
+                          <Input
+                            name={`${field.name}-desc-${idx}`}
+                            value={val.description}
+                            onChange={(e) =>
+                              handleDynamicPairChange(
+                                field.name,
+                                idx,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            bg={inputBg}
+                            borderRadius="md"
+                            focusBorderColor={inputFocusBorder}
+                            placeholder={
+                              field.descriptionPlaceholder || "Description"
+                            }
+                          />
+                          <Input
+                            name={`${field.name}-weight-${idx}`}
+                            value={val.weight}
+                            onChange={(e) =>
+                              handleDynamicPairChange(
+                                field.name,
+                                idx,
+                                "weight",
+                                e.target.value
+                              )
+                            }
+                            bg={inputBg}
+                            borderRadius="md"
+                            focusBorderColor={inputFocusBorder}
+                            placeholder={field.weightPlaceholder || "Weight"}
+                          />
+                          {form[field.name].length === 1 ? (
+                            <IconButton
+                              aria-label={`Add ${field.label}`}
+                              icon={<AddIcon />}
+                              size="sm"
+                              onClick={() => addDynamicPair(field.name)}
+                            />
+                          ) : idx === form[field.name].length - 1 ? (
+                            <IconButton
+                              aria-label={`Add ${field.label}`}
+                              icon={<AddIcon />}
+                              size="sm"
+                              onClick={() => addDynamicPair(field.name)}
+                            />
+                          ) : (
+                            <IconButton
+                              aria-label={`Remove ${field.label}`}
+                              icon={<MinusIcon />}
+                              size="sm"
+                              onClick={() => removeDynamicPair(field.name, idx)}
+                            />
+                          )}
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </FormControl>
+                );
+              }
+              if (field.type === "dynamicCargoGroup") {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <VStack align="stretch" spacing={4}>
+                      {form[field.name].map((val, idx) => (
+                        <HStack
+                          key={idx}
+                          align="stretch"
+                          spacing={2}
+                          borderWidth="1px"
+                          borderRadius="lg"
+                          bg={cargoGroupBg}
+                          p={3}
+                          mb={1}
+                        >
+                          <Box flex="1">
+                            <HStack spacing={2} mb={2} flexWrap="wrap">
+                              <Input
+                                name={`${field.name}-desc-${idx}`}
+                                value={val.description || ""}
+                                onChange={(e) =>
+                                  handleDynamicCargoGroupChange(
+                                    field.name,
+                                    idx,
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                                bg={inputBg}
+                                borderRadius="md"
+                                focusBorderColor={inputFocusBorder}
+                                placeholder={
+                                  field.descriptionPlaceholder || "Description"
+                                }
+                                minW="0"
                               />
-                            ) : idx === form[field.name].length - 1 ? (
-                              <IconButton
-                                aria-label={`Add ${field.label}`}
-                                icon={<AddIcon />}
-                                size="sm"
-                                onClick={() => addDynamic(field.name)}
+                              <Input
+                                name={`${field.name}-packages-${idx}`}
+                                value={val.packages || ""}
+                                onChange={(e) =>
+                                  handleDynamicCargoGroupChange(
+                                    field.name,
+                                    idx,
+                                    "packages",
+                                    e.target.value
+                                  )
+                                }
+                                bg={inputBg}
+                                borderRadius="md"
+                                focusBorderColor={inputFocusBorder}
+                                placeholder={
+                                  field.packagesPlaceholder || "Packages"
+                                }
+                                minW="0"
                               />
-                            ) : (
+                              <Input
+                                name={`${field.name}-weight-${idx}`}
+                                value={val.weight || ""}
+                                onChange={(e) =>
+                                  handleDynamicCargoGroupChange(
+                                    field.name,
+                                    idx,
+                                    "weight",
+                                    e.target.value
+                                  )
+                                }
+                                bg={inputBg}
+                                borderRadius="md"
+                                focusBorderColor={inputFocusBorder}
+                                placeholder={
+                                  field.weightPlaceholder || "Weight"
+                                }
+                                minW="0"
+                              />
+                            </HStack>
+                            <HStack spacing={2} flexWrap="wrap">
+                              <Input
+                                name={`${field.name}-shipper-${idx}`}
+                                value={val.shipper || ""}
+                                onChange={(e) =>
+                                  handleDynamicCargoGroupChange(
+                                    field.name,
+                                    idx,
+                                    "shipper",
+                                    e.target.value
+                                  )
+                                }
+                                bg={inputBg}
+                                borderRadius="md"
+                                focusBorderColor={inputFocusBorder}
+                                placeholder={
+                                  field.shipperPlaceholder || "Shipper"
+                                }
+                                minW="0"
+                              />
+                              <Input
+                                name={`${field.name}-consignee-${idx}`}
+                                value={val.consignee || ""}
+                                onChange={(e) =>
+                                  handleDynamicCargoGroupChange(
+                                    field.name,
+                                    idx,
+                                    "consignee",
+                                    e.target.value
+                                  )
+                                }
+                                bg={inputBg}
+                                borderRadius="md"
+                                focusBorderColor={inputFocusBorder}
+                                placeholder={
+                                  field.consigneePlaceholder || "Consignee"
+                                }
+                                minW="0"
+                              />
+                            </HStack>
+                          </Box>
+                          <VStack justify="center" spacing={2} minW="40px">
+                            {form[field.name].length > 1 && (
                               <IconButton
                                 aria-label={`Remove ${field.label}`}
                                 icon={<MinusIcon />}
                                 size="sm"
-                                onClick={() => removeDynamic(field.name, idx)}
-                              />
-                            )}
-                          </HStack>
-                        ))}
-                      </VStack>
-                    </FormControl>
-                  );
-                }
-                if (field.type === "dynamicPair") {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <VStack align="stretch" spacing={2}>
-                        {form[field.name].map((val, idx) => (
-                          <HStack key={idx}>
-                            <Input
-                              name={`${field.name}-desc-${idx}`}
-                              value={val.description}
-                              onChange={(e) =>
-                                handleDynamicPairChange(
-                                  field.name,
-                                  idx,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              bg={inputBg}
-                              borderRadius="md"
-                              focusBorderColor={inputFocusBorder}
-                              placeholder={
-                                field.descriptionPlaceholder || "Description"
-                              }
-                            />
-                            <Input
-                              name={`${field.name}-weight-${idx}`}
-                              value={val.weight}
-                              onChange={(e) =>
-                                handleDynamicPairChange(
-                                  field.name,
-                                  idx,
-                                  "weight",
-                                  e.target.value
-                                )
-                              }
-                              bg={inputBg}
-                              borderRadius="md"
-                              focusBorderColor={inputFocusBorder}
-                              placeholder={field.weightPlaceholder || "Weight"}
-                            />
-                            {form[field.name].length === 1 ? (
-                              <IconButton
-                                aria-label={`Add ${field.label}`}
-                                icon={<AddIcon />}
-                                size="sm"
-                                onClick={() => addDynamicPair(field.name)}
-                              />
-                            ) : idx === form[field.name].length - 1 ? (
-                              <IconButton
-                                aria-label={`Add ${field.label}`}
-                                icon={<AddIcon />}
-                                size="sm"
-                                onClick={() => addDynamicPair(field.name)}
-                              />
-                            ) : (
-                              <IconButton
-                                aria-label={`Remove ${field.label}`}
-                                icon={<MinusIcon />}
-                                size="sm"
+                                alignSelf="center"
                                 onClick={() =>
-                                  removeDynamicPair(field.name, idx)
+                                  removeDynamicCargoGroup(field.name, idx)
                                 }
                               />
                             )}
-                          </HStack>
-                        ))}
-                      </VStack>
-                    </FormControl>
-                  );
-                }
-                if (field.type === "dynamicCargoGroup") {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <VStack align="stretch" spacing={4}>
-                        {form[field.name].map((val, idx) => (
-                          <HStack
-                            key={idx}
-                            align="stretch"
-                            spacing={2}
-                            borderWidth="1px"
-                            borderRadius="lg"
-                            bg={cargoGroupBg}
-                            p={3}
-                            mb={1}
+                            {idx === form[field.name].length - 1 && (
+                              <IconButton
+                                aria-label={`Add ${field.label}`}
+                                icon={<AddIcon />}
+                                size="sm"
+                                alignSelf="center"
+                                onClick={() => addDynamicCargoGroup(field.name)}
+                              />
+                            )}
+                          </VStack>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </FormControl>
+                );
+              }
+              if (field.type === "textarea") {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Textarea
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                      rows={field.rows || 4}
+                    />
+                  </FormControl>
+                );
+              }
+              // Custom fields (e.g., custom operator/principal)
+              if (
+                field.type === "customOperator" &&
+                form.operator === "Custom"
+              ) {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Input
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                    />
+                  </FormControl>
+                );
+              }
+              if (
+                field.type === "customPrincipal" &&
+                form.principalName === "Custom"
+              ) {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Input
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                    />
+                  </FormControl>
+                );
+              }
+              if (
+                field.type === "customPortArea" &&
+                form.portArea === "Custom Location"
+              ) {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Input
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                    />
+                  </FormControl>
+                );
+              }
+              return null;
+            })}
+            {/* FILE UPLOAD FIELD RENDERED ONCE BELOW ALL FIELDS */}
+            {fileField && (
+              <FormControl key={fileField.name} isRequired={fileField.required}>
+                <FormLabel>
+                  {fileField.label.replace(/\(ZIP files\)/i, "")}
+                  <span
+                    style={{ color: "red", fontWeight: "bold", marginLeft: 4 }}
+                  >
+                    (ZIP files)
+                  </span>
+                </FormLabel>
+                <Input
+                  type="file"
+                  name={fileField.name}
+                  accept={fileField.accept}
+                  multiple
+                  onChange={(e) => {
+                    const newFiles = e.target.files
+                      ? Array.from(e.target.files)
+                      : [];
+                    setForm((prev) => {
+                      const existing = Array.isArray(prev[fileField.name])
+                        ? prev[fileField.name]
+                        : [];
+                      // APPEND NEW FILES, AVOID DUPLICATES BY NAME + SIZE
+                      const allFiles = [...existing];
+                      newFiles.forEach((f) => {
+                        if (
+                          !allFiles.some(
+                            (x) => x.name === f.name && x.size === f.size
+                          )
+                        ) {
+                          allFiles.push(f);
+                        }
+                      });
+                      return { ...prev, [fileField.name]: allFiles };
+                    });
+                    // RESET INPUT VALUE TO ALLOW RE-SELECTING SAME FILE
+                    e.target.value = "";
+                  }}
+                  bg={inputBg}
+                  borderRadius="md"
+                  focusBorderColor={inputFocusBorder}
+                />
+                {/* SHOW SELECTED FILES LIST */}
+                {Array.isArray(form[fileField.name]) &&
+                  form[fileField.name].length > 0 && (
+                    <VStack align="start" mt={2} spacing={1}>
+                      {form[fileField.name].map((file, idx) => (
+                        <HStack key={file.name + file.size} spacing={2}>
+                          <Box fontSize="sm">{file.name}</Box>
+                          <Button
+                            size="xs"
+                            colorScheme="red"
+                            variant="ghost"
+                            onClick={() => {
+                              setForm((prev) => {
+                                const arr = prev[fileField.name].filter(
+                                  (_, i) => i !== idx
+                                );
+                                return { ...prev, [fileField.name]: arr };
+                              });
+                            }}
                           >
-                            <Box flex="1">
-                              <HStack spacing={2} mb={2} flexWrap="wrap">
-                                <Input
-                                  name={`${field.name}-desc-${idx}`}
-                                  value={val.description || ""}
-                                  onChange={(e) =>
-                                    handleDynamicCargoGroupChange(
-                                      field.name,
-                                      idx,
-                                      "description",
-                                      e.target.value
-                                    )
-                                  }
-                                  bg={inputBg}
-                                  borderRadius="md"
-                                  focusBorderColor={inputFocusBorder}
-                                  placeholder={
-                                    field.descriptionPlaceholder ||
-                                    "Description"
-                                  }
-                                  minW="0"
-                                />
-                                <Input
-                                  name={`${field.name}-packages-${idx}`}
-                                  value={val.packages || ""}
-                                  onChange={(e) =>
-                                    handleDynamicCargoGroupChange(
-                                      field.name,
-                                      idx,
-                                      "packages",
-                                      e.target.value
-                                    )
-                                  }
-                                  bg={inputBg}
-                                  borderRadius="md"
-                                  focusBorderColor={inputFocusBorder}
-                                  placeholder={
-                                    field.packagesPlaceholder || "Packages"
-                                  }
-                                  minW="0"
-                                />
-                                <Input
-                                  name={`${field.name}-weight-${idx}`}
-                                  value={val.weight || ""}
-                                  onChange={(e) =>
-                                    handleDynamicCargoGroupChange(
-                                      field.name,
-                                      idx,
-                                      "weight",
-                                      e.target.value
-                                    )
-                                  }
-                                  bg={inputBg}
-                                  borderRadius="md"
-                                  focusBorderColor={inputFocusBorder}
-                                  placeholder={
-                                    field.weightPlaceholder || "Weight"
-                                  }
-                                  minW="0"
-                                />
-                              </HStack>
-                              <HStack spacing={2} flexWrap="wrap">
-                                <Input
-                                  name={`${field.name}-shipper-${idx}`}
-                                  value={val.shipper || ""}
-                                  onChange={(e) =>
-                                    handleDynamicCargoGroupChange(
-                                      field.name,
-                                      idx,
-                                      "shipper",
-                                      e.target.value
-                                    )
-                                  }
-                                  bg={inputBg}
-                                  borderRadius="md"
-                                  focusBorderColor={inputFocusBorder}
-                                  placeholder={
-                                    field.shipperPlaceholder || "Shipper"
-                                  }
-                                  minW="0"
-                                />
-                                <Input
-                                  name={`${field.name}-consignee-${idx}`}
-                                  value={val.consignee || ""}
-                                  onChange={(e) =>
-                                    handleDynamicCargoGroupChange(
-                                      field.name,
-                                      idx,
-                                      "consignee",
-                                      e.target.value
-                                    )
-                                  }
-                                  bg={inputBg}
-                                  borderRadius="md"
-                                  focusBorderColor={inputFocusBorder}
-                                  placeholder={
-                                    field.consigneePlaceholder || "Consignee"
-                                  }
-                                  minW="0"
-                                />
-                              </HStack>
-                            </Box>
-                            <VStack justify="center" spacing={2} minW="40px">
-                              {form[field.name].length > 1 && (
-                                <IconButton
-                                  aria-label={`Remove ${field.label}`}
-                                  icon={<MinusIcon />}
-                                  size="sm"
-                                  alignSelf="center"
-                                  onClick={() =>
-                                    removeDynamicCargoGroup(field.name, idx)
-                                  }
-                                />
-                              )}
-                              {idx === form[field.name].length - 1 && (
-                                <IconButton
-                                  aria-label={`Add ${field.label}`}
-                                  icon={<AddIcon />}
-                                  size="sm"
-                                  alignSelf="center"
-                                  onClick={() =>
-                                    addDynamicCargoGroup(field.name)
-                                  }
-                                />
-                              )}
-                            </VStack>
-                          </HStack>
-                        ))}
-                      </VStack>
-                    </FormControl>
-                  );
-                }
-                if (field.type === "textarea") {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Textarea
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder}
-                        rows={field.rows || 4}
-                      />
-                    </FormControl>
-                  );
-                }
-                // Custom fields (e.g., custom operator/principal)
-                if (
-                  field.type === "customOperator" &&
-                  form.operator === "Custom"
-                ) {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Input
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder}
-                      />
-                    </FormControl>
-                  );
-                }
-                if (
-                  field.type === "customPrincipal" &&
-                  form.principalName === "Custom"
-                ) {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Input
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder}
-                      />
-                    </FormControl>
-                  );
-                }
-                if (
-                  field.type === "customPortArea" &&
-                  form.portArea === "Custom Location"
-                ) {
-                  return (
-                    <FormControl key={field.name} isRequired={field.required}>
-                      <FormLabel>{field.label}</FormLabel>
-                      <Input
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        bg={inputBg}
-                        borderRadius="md"
-                        focusBorderColor={inputFocusBorder}
-                        placeholder={field.placeholder}
-                      />
-                    </FormControl>
-                  );
-                }
-                return null;
-              })}
-              {/* FILE UPLOAD FIELD RENDERED ONCE BELOW ALL FIELDS */}
-              {fileField && (
-                <FormControl
-                  key={fileField.name}
-                  isRequired={fileField.required}
-                >
-                  <FormLabel>{fileField.label}</FormLabel>
-                  <Input
-                    type="file"
-                    name={fileField.name}
-                    accept={fileField.accept}
-                    onChange={(e) => {
-                      const file = e.target.files && e.target.files[0];
-                      setForm((prev) => ({ ...prev, [fileField.name]: file }));
-                    }}
-                    bg={inputBg}
-                    borderRadius="md"
-                    focusBorderColor={inputFocusBorder}
-                  />
-                </FormControl>
-              )}
-              <Button
-                type="submit"
-                size="lg"
-                fontWeight="bold"
-                borderRadius="lg"
-                bgGradient="linear(to-r, teal.400, teal.500)"
-                _hover={{ bgGradient: "linear(to-r, teal.500, teal.600)" }}
-                color="white"
-              >
-                Submit
-              </Button>
-            </VStack>
-          </Box>
+                            REMOVE
+                          </Button>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  )}
+              </FormControl>
+            )}
+            <Button
+              type="submit"
+              size="lg"
+              fontWeight="bold"
+              borderRadius="lg"
+              bgGradient="linear(to-r, teal.400, teal.500)"
+              _hover={{ bgGradient: "linear(to-r, teal.500, teal.600)" }}
+              color="white"
+            >
+              Submit
+            </Button>
+          </VStack>
         </Box>
-      )}
+      </Box>
     </Container>
   );
 }
