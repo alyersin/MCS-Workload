@@ -8,6 +8,7 @@ import Footer from "@/components/Layout/Footer.jsx";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useState } from "react";
+import StyledComponentsRegistry from "@/lib/registry";
 import AuthProvider, {
   useAuthLoading,
 } from "@/components/Providers/SessionProvider";
@@ -85,11 +86,13 @@ export default function RootLayout({ children }) {
       </head>
 
       <body suppressHydrationWarning style={{ margin: 0 }}>
-        <AuthProvider>
-          <ChakraProvider theme={theme}>
-            <AppContent isLoginPage={isLoginPage}>{children}</AppContent>
-          </ChakraProvider>
-        </AuthProvider>
+        <StyledComponentsRegistry>
+          <AuthProvider>
+            <ChakraProvider theme={theme}>
+              <AppContent isLoginPage={isLoginPage}>{children}</AppContent>
+            </ChakraProvider>
+          </AuthProvider>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );
