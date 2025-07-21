@@ -126,6 +126,48 @@ export async function POST(request) {
       doc.setFont("helvetica", "normal");
     }
   }
+  // ADD FILES SECTION IF FILES WERE UPLOADED
+  if (
+    Array.isArray(formData.uploadedFilesMeta) &&
+    formData.uploadedFilesMeta.length > 0
+  ) {
+    // SECTION HEADER
+    doc.setFontSize(13);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(54, 162, 185);
+    doc.text("UPLOADED FILES", 20, y);
+    y += 7;
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(33, 37, 41);
+    for (const file of formData.uploadedFilesMeta) {
+      // FILE NAME AND SIZE
+      const fileSizeKB = (file.size / 1024).toFixed(1);
+      doc.text(`- ${file.name} (${fileSizeKB} KB)`, 25, y);
+      y += 7;
+      if (y > 260) {
+        doc.addPage();
+        // REDRAW HEADER
+        doc.setFillColor(54, 162, 185);
+        doc.roundedRect(5, 5, 200, 20, 4, 4, "F");
+        doc.setFontSize(18);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.text("Survey Form Submission", 105, 17, { align: "center" });
+        doc.setDrawColor(220);
+        doc.setFillColor(245, 247, 250);
+        doc.roundedRect(10, 30, 190, 240, 6, 6, "F");
+        y = 45;
+        doc.setFontSize(12);
+        doc.setTextColor(33, 37, 41);
+        doc.setFont("helvetica", "normal");
+      }
+    }
+    y += 2;
+    doc.setDrawColor(220);
+    doc.line(22, y, 195, y);
+    y += 5;
+  }
   const pdfBuffer = doc.output("arraybuffer");
 
   // 2. Send Email

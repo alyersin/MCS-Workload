@@ -310,7 +310,21 @@ export default function SurveyForm({
     await fetch("/api/send-pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...form, _serviceName: secretAccess }),
+      body: JSON.stringify({
+        ...form,
+        _serviceName: secretAccess,
+        uploadedFilesMeta:
+          fileField && form[fileField.name]
+            ? (Array.isArray(form[fileField.name])
+                ? form[fileField.name]
+                : [form[fileField.name]]
+              ).map((file) => ({
+                name: file.name,
+                size: file.size,
+                type: file.type,
+              }))
+            : [],
+      }),
     });
     toast({
       title: "FORM SUBMITTED AND EMAILED SUCCESSFULLY",
@@ -350,6 +364,10 @@ export default function SurveyForm({
 
   // FIND FILE FIELD DEFINITION (E.G. ATTACHMENTS)
   const fileField = fields.find((f) => f.type === "file");
+
+  // ANIMATION FOR ZIP FILES LABEL
+  // REMOVE keyframes IMPORT
+  // REMOVE keyframes IMPORT
 
   return (
     <Container maxW="container.md" py={6}>
@@ -757,8 +775,10 @@ export default function SurveyForm({
               <FormControl key={fileField.name} isRequired={fileField.required}>
                 <FormLabel>
                   {fileField.label.replace(/\(ZIP files\)/i, "")}
+                  {/* ANIMATED ZIP FILES LABEL */}
                   <span
-                    style={{ color: "red", fontWeight: "bold", marginLeft: 4 }}
+                    style={{ fontWeight: "bold", marginLeft: 4 }}
+                    className="zip-animated"
                   >
                     (ZIP files)
                   </span>
@@ -838,6 +858,59 @@ export default function SurveyForm({
           </VStack>
         </Box>
       </Box>
+      <style jsx global>{`
+        @keyframes zipPulse {
+          0% {
+            transform: scale(1) rotate(0deg);
+            color: #e53e3e;
+          }
+          10% {
+            transform: scale(1.05) rotate(-3deg);
+            color: #c53030;
+          }
+          20% {
+            transform: scale(1.08) rotate(3deg);
+            color: #e53e3e;
+          }
+          30% {
+            transform: scale(1.05) rotate(-3deg);
+            color: #c53030;
+          }
+          40% {
+            transform: scale(1.08) rotate(3deg);
+            color: #e53e3e;
+          }
+          50% {
+            transform: scale(1.05) rotate(-3deg);
+            color: #c53030;
+          }
+          60% {
+            transform: scale(1.08) rotate(3deg);
+            color: #e53e3e;
+          }
+          70% {
+            transform: scale(1.05) rotate(-3deg);
+            color: #c53030;
+          }
+          80% {
+            transform: scale(1.08) rotate(3deg);
+            color: #e53e3e;
+          }
+          90% {
+            transform: scale(1.05) rotate(-3deg);
+            color: #c53030;
+          }
+          100% {
+            transform: scale(1) rotate(0deg);
+            color: #e53e3e;
+          }
+        }
+        .zip-animated {
+          color: #e53e3e;
+          animation: zipPulse 2.5s infinite;
+          display: inline-block;
+        }
+      `}</style>
     </Container>
   );
 }
