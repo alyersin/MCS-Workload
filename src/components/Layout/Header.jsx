@@ -37,6 +37,7 @@ import { HamburgerIcon } from "@chakra-ui/icons";
 import { useAuth } from "@/hooks/useAuth";
 import LoginModal from "@/components/Auth/LoginModal";
 import { useRouter } from "next/navigation";
+import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
 
 // HEADER COMPONENT
 export default function Header() {
@@ -159,13 +160,35 @@ export default function Header() {
       as="header"
       width="full"
       mx="auto"
-      px={6}
-      py={4}
-      borderBottom="1px"
-      borderColor={useColorModeValue("gray.200", "gray.700")}
-      mb={8}
+      px={0}
+      py={0}
+      borderBottom="none"
+      mb={0}
+      position="relative"
     >
-      <Box width={{ base: "100%", md: "1024px" }} mx="auto">
+      {/* Toggle switch full-width bar (desktop only) */}
+      <Box
+        width="100%"
+        display={{ base: "none", md: "flex" }}
+        justifyContent="flex-end"
+        alignItems="center"
+        px={6}
+        py={2}
+        style={{ minHeight: 0 }}
+      >
+        <ColorModeSwitch />
+      </Box>
+      {/* Main header content */}
+      <Box
+        width={{ base: "100%", md: "1024px" }}
+        mx="auto"
+        px={6}
+        py={4}
+        borderBottom="1px"
+        borderColor={useColorModeValue("gray.200", "gray.700")}
+        mb={8}
+        position="relative"
+      >
         <Flex align="center" justify="space-between" position="relative">
           <Link href="/" _hover={{ textDecoration: "none" }}>
             <Image
@@ -273,6 +296,7 @@ export default function Header() {
                 </MenuItem>
               </MenuList>
             </Menu>
+
             {isAuthenticated && (
               <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
                 {`Welcome, ${session?.user?.name || session?.user?.email}`}

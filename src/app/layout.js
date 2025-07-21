@@ -36,7 +36,12 @@ function AppContent({ children, isLoginPage }) {
       {!isLoginPage && (
         <Box position="relative">
           <Header />
-          <Box position="absolute" right={4} bottom="-4px">
+          <Box
+            display={{ base: "block", md: "none" }}
+            position="absolute"
+            right={4}
+            bottom="-4px"
+          >
             <ColorModeSwitch />
           </Box>
         </Box>

@@ -9,6 +9,7 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
   const [isStrippingOpen, setIsStrippingOpen] = useState(false);
   const [isTransfersOpen, setIsTransfersOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [mobileTranslate, setMobileTranslate] = useState(0); // 0=center, -1=left, 1=right
 
   useEffect(() => {
     setMounted(true);
@@ -22,12 +23,17 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
       setIsTransloadingOpen(false);
       setIsStuffingOpen(false);
       setIsStrippingOpen(false);
+      setIsTransfersOpen(false);
+      setMobileTranslate(0);
     }
   };
 
   const handleTransloadingClick = (e) => {
     e.preventDefault();
     setIsTransloadingOpen((prev) => !prev);
+    if (window.innerWidth < 600) {
+      setMobileTranslate((prev) => (prev === 1 ? 0 : 1));
+    }
   };
 
   const handleStuffingClick = (e) => {
@@ -43,10 +49,23 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
   const handleTransfersClick = (e) => {
     e.preventDefault();
     setIsTransfersOpen((prev) => !prev);
+    if (window.innerWidth < 600) {
+      setMobileTranslate((prev) => (prev === -1 ? 0 : -1));
+    }
+  };
+
+  // Reset translation on mobile
+  const handleResetMobile = () => {
+    setMobileTranslate(0);
+    setIsTransloadingOpen(false);
+    setIsTransfersOpen(false);
   };
 
   return (
-    <StyledWrapper className={isOpen ? "open" : ""}>
+    <StyledWrapper
+      className={isOpen ? "open" : ""}
+      $mobiletranslate={mobileTranslate}
+    >
       <nav className="menu">
         <input
           type="checkbox"
@@ -58,6 +77,19 @@ export default function StyledHamburger({ onContactClick, closeMenu }) {
         <label className="menu-open-button" htmlFor="menu-open">
           START NEW PROJECT
         </label>
+
+        {/*
+        // Show reset button on mobile when translated
+        {mobileTranslate !== 0 && (
+          <button
+            className="mobile-reset-btn"
+            onClick={handleResetMobile}
+            style={{ position: 'absolute', top: 10, right: 10, zIndex: 10 }}
+          >
+            Back
+          </button>
+        )}
+        */}
 
         <div className="menu-item transfers-wrapper item9">
           <a href="#" className="transfers-main" onClick={handleTransfersClick}>
@@ -159,6 +191,7 @@ const StyledWrapper = styled.div`
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
   }
 
   .menu-open-button {
@@ -508,5 +541,34 @@ const StyledWrapper = styled.div`
   .transfers-sub-bottom {
     top: 70px;
     left: 120px;
+  }
+
+  /* MOBILE TRANSLATION */
+  @media (max-width: 600px) {
+    .menu {
+      width: 100vw;
+      margin: 40px 0 0 0;
+      /* TranslateX based on state: right for transloading, left for transfers */
+      transform: ${({ $mobiletranslate }) =>
+        $mobiletranslate === 1
+          ? "translateX(80px)" // shift right
+          : $mobiletranslate === -1
+          ? "translateX(-80px)" // shift left
+          : "translateX(0)"};
+    }
+    .mobile-reset-btn {
+      background: #319795;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+      cursor: pointer;
+    }
+    .mobile-reset-btn:active {
+      background: #2c7a7b;
+    }
   }
 `;
