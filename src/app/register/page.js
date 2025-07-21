@@ -77,10 +77,7 @@ export default function RegisterPage() {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${
-          process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-          process.env.FIREBASE_API_KEY
-        }`,
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

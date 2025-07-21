@@ -147,10 +147,7 @@ export default function LoginModal({ isOpen, onClose }) {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${
-          process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-          process.env.FIREBASE_API_KEY
-        }`,
+        `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -171,10 +168,6 @@ export default function LoginModal({ isOpen, onClose }) {
           isClosable: true,
         });
       } else {
-        await setDoc(doc(db, "users", data.localId), {
-          email: registerForm.email,
-          createdAt: new Date(),
-        });
         toast({
           title: "Registration successful!",
           description: "You can now log in.",
@@ -213,10 +206,7 @@ export default function LoginModal({ isOpen, onClose }) {
     setIsLoading(true);
     try {
       const response = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${
-          process.env.NEXT_PUBLIC_FIREBASE_API_KEY ||
-          process.env.FIREBASE_API_KEY
-        }`,
+        `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
