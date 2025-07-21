@@ -31,6 +31,7 @@ import {
   MenuList as ChakraMenuList,
   MenuItem as ChakraMenuItem,
   Spinner,
+  useColorMode,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -43,6 +44,7 @@ export default function Header() {
   const [isLoginModalOpen, setLoginModalOpen] = React.useState(false);
   const { session, isAuthenticated, logout, isLoading } = useAuth();
   const router = useRouter();
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const handleLoginOpen = () => setLoginModalOpen(true);
   const handleLoginClose = () => setLoginModalOpen(false);
@@ -271,6 +273,11 @@ export default function Header() {
                 </MenuItem>
               </MenuList>
             </Menu>
+            {isAuthenticated && (
+              <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
+                {`Welcome, ${session?.user?.name || session?.user?.email}`}
+              </Text>
+            )}
             {isLoading ? (
               <Spinner
                 size="sm"
@@ -282,11 +289,6 @@ export default function Header() {
               />
             ) : (
               <>
-                {isAuthenticated && (
-                  <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
-                    {`Welcome, ${session?.user?.name || session?.user?.email}`}
-                  </Text>
-                )}
                 {isAuthenticated ? (
                   <ChakraMenu>
                     <ChakraMenuButton

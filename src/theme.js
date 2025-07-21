@@ -10,6 +10,10 @@ const theme = extendTheme({
     xl: "80em", // 1280px
     "2xl": "96em", // 1536px
   },
+  config: {
+    initialColorMode: "light",
+    useSystemColorMode: true,
+  },
 });
 
 export default theme;

@@ -45,6 +45,7 @@
   "devDependencies": {
     "@babel/core": "^7.26.9",
     "@babel/preset-env": "^7.26.9",
+    "babel-plugin-styled-components": "^2.1.4",
     "cross-env": "^7.0.3"
   }
 }

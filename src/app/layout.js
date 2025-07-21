@@ -11,10 +11,12 @@ import { useEffect, useState } from "react";
 import AuthProvider, {
   useAuthLoading,
 } from "@/components/Providers/SessionProvider";
-import { Spinner, Center } from "@chakra-ui/react";
+import { Spinner, Center, useColorModeValue } from "@chakra-ui/react";
+import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
 
 function AppContent({ children, isLoginPage }) {
   const { isLoading } = useAuthLoading();
+  const bg = useColorModeValue("gray.50", "gray.900");
   if (isLoading) {
     return (
       <Center minH="100vh" w="100vw">
@@ -29,8 +31,15 @@ function AppContent({ children, isLoginPage }) {
     );
   }
   return (
-    <Box minH="100vh" display="flex" flexDirection="column" bg="gray.50">
-      {!isLoginPage && <Header />}
+    <Box minH="100vh" display="flex" flexDirection="column" bg={bg}>
+      {!isLoginPage && (
+        <Box position="relative">
+          <Header />
+          <Box position="absolute" right={4} bottom="-4px">
+            <ColorModeSwitch />
+          </Box>
+        </Box>
+      )}
       <Box as="main" flex="1" display="flex" flexDirection="column">
         {children}
       </Box>
