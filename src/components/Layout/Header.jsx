@@ -38,6 +38,8 @@ import { useAuth } from "@/hooks/useAuth";
 import LoginModal from "@/components/Auth/LoginModal";
 import { useRouter } from "next/navigation";
 import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
+import TestAuthModal from "../Modals/TestAuthModal";
+import GDPRBanner from "../Modals/GDPRModal";
 
 // HEADER COMPONENT
 export default function Header() {
@@ -156,232 +158,235 @@ export default function Header() {
   );
 
   return (
-    <Box
-      as="header"
-      width="full"
-      mx="auto"
-      px={0}
-      py={0}
-      borderBottom="none"
-      mb={0}
-      position="relative"
-    >
-      {/* Toggle switch full-width bar (desktop only) */}
+    <>
+      <GDPRBanner />
       <Box
-        width="100%"
-        display={{ base: "none", md: "flex" }}
-        justifyContent="flex-end"
-        alignItems="center"
-        px={6}
-        py={2}
-        style={{ minHeight: 0 }}
-      >
-        <ColorModeSwitch />
-      </Box>
-      {/* Main header content */}
-      <Box
-        width={{ base: "100%", md: "1024px" }}
+        as="header"
+        width="full"
         mx="auto"
-        px={6}
-        py={4}
-        borderBottom="1px"
-        borderColor={useColorModeValue("gray.200", "gray.700")}
-        mb={8}
+        px={0}
+        py={0}
+        borderBottom="none"
+        mb={0}
         position="relative"
       >
-        <Flex align="center" justify="space-between" position="relative">
-          <Link href="/" _hover={{ textDecoration: "none" }}>
-            <Image
-              src="/logo/logo.png"
-              alt="Company Logo"
-              width={100}
-              height={20}
-              objectFit="contain"
-            />
-          </Link>
-
-          <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
-            <Link
-              href="/"
-              textDecoration="none"
-              _hover={{ textDecoration: "none" }}
-            >
-              Home
+        {/* Toggle switch full-width bar (desktop only) */}
+        <Box
+          width="100%"
+          display={{ base: "none", md: "flex" }}
+          justifyContent="flex-end"
+          alignItems="center"
+          px={6}
+          py={2}
+          style={{ minHeight: 0 }}
+        >
+          <ColorModeSwitch />
+        </Box>
+        {/* Main header content */}
+        <Box
+          width={{ base: "100%", md: "1024px" }}
+          mx="auto"
+          px={6}
+          py={4}
+          borderBottom="1px"
+          borderColor={useColorModeValue("gray.200", "gray.700")}
+          mb={8}
+          position="relative"
+        >
+          <Flex align="center" justify="space-between" position="relative">
+            <Link href="/" _hover={{ textDecoration: "none" }}>
+              <Image
+                src="/logo/logo.png"
+                alt="Company Logo"
+                width={100}
+                height={20}
+                objectFit="contain"
+              />
             </Link>
 
-            <Menu>
-              <MenuButton
-                as={Link}
+            <HStack as="nav" spacing={6} display={{ base: "none", md: "flex" }}>
+              <Link
+                href="/"
                 textDecoration="none"
                 _hover={{ textDecoration: "none" }}
               >
-                Services
-              </MenuButton>
-              <MenuList>
-                <MenuGroup title="Transloading">
-                  <MenuItem
-                    as={Link}
-                    href="/services/transloading/container-truck"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    Container → Truck
-                  </MenuItem>
-                  <MenuItem
-                    as={Link}
-                    href="/services/transloading/truck-container"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    Truck → Container
-                  </MenuItem>
-                </MenuGroup>
-                <MenuDivider />
-                <MenuGroup title="Stripping">
-                  <MenuItem
-                    as={Link}
-                    href="/services/stripping"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    Container → Storage
-                  </MenuItem>
-                </MenuGroup>
-                <MenuDivider />
-                <MenuGroup title="Stuffing">
-                  <MenuItem
-                    as={Link}
-                    href="/services/stuffing"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    Storage → Container
-                  </MenuItem>
-                </MenuGroup>
-                <MenuDivider />
-                <MenuGroup title="Transfers">
-                  <MenuItem
-                    as={Link}
-                    href="/services/stripping-restuffing"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    Stripping & Restuffing
-                  </MenuItem>
-                  <MenuItem
-                    as={Link}
-                    href="/services/transshipment-C2C"
-                    textDecoration="none"
-                    _hover={{ textDecoration: "none" }}
-                  >
-                    C2C Transfer
-                  </MenuItem>
-                  <MenuDivider />
-                </MenuGroup>
-                <MenuItem
-                  as={Link}
-                  href="/services/vessel-barge"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
-                  Vessel/Barge
-                </MenuItem>
-                <MenuItem
-                  as={Link}
-                  href="/services/lashing"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
-                  Lashing Report
-                </MenuItem>
-              </MenuList>
-            </Menu>
+                Home
+              </Link>
 
-            {isAuthenticated && (
-              <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
-                {`Welcome, ${session?.user?.name || session?.user?.email}`}
-              </Text>
-            )}
-            {isLoading ? (
-              <Spinner
-                size="sm"
-                thickness="3px"
-                speed="0.65s"
-                color="teal.500"
-                emptyColor="gray.200"
-                ml={4}
-              />
-            ) : (
-              <>
-                {isAuthenticated ? (
-                  <ChakraMenu>
-                    <ChakraMenuButton
-                      as={Button}
-                      rounded="full"
-                      variant="link"
-                      cursor="pointer"
-                      minW={0}
+              <Menu>
+                <MenuButton
+                  as={Link}
+                  textDecoration="none"
+                  _hover={{ textDecoration: "none" }}
+                >
+                  Services
+                </MenuButton>
+                <MenuList>
+                  <MenuGroup title="Transloading">
+                    <MenuItem
+                      as={Link}
+                      href="/services/transloading/container-truck"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
                     >
-                      <Avatar
-                        size="sm"
-                        name={session?.user?.name || session?.user?.email}
-                      />
-                    </ChakraMenuButton>
-                    <ChakraMenuList>
-                      <ChakraMenuItem as={Link} href="/profile?tab=dashboard">
-                        Dashboard
-                      </ChakraMenuItem>
-                      <ChakraMenuItem as={Link} href="/profile?tab=profile">
-                        Profile
-                      </ChakraMenuItem>
-                      <ChakraMenuItem as={Link} href="/profile?tab=settings">
-                        Settings
-                      </ChakraMenuItem>
-                      <MenuDivider />
-                      <ChakraMenuItem onClick={logout} color="red.500">
-                        Logout
-                      </ChakraMenuItem>
-                    </ChakraMenuList>
-                  </ChakraMenu>
-                ) : (
-                  <Button
-                    onClick={handleLoginOpen}
-                    colorScheme="teal"
-                    size="sm"
+                      Container → Truck
+                    </MenuItem>
+                    <MenuItem
+                      as={Link}
+                      href="/services/transloading/truck-container"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      Truck → Container
+                    </MenuItem>
+                  </MenuGroup>
+                  <MenuDivider />
+                  <MenuGroup title="Stripping">
+                    <MenuItem
+                      as={Link}
+                      href="/services/stripping"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      Container → Storage
+                    </MenuItem>
+                  </MenuGroup>
+                  <MenuDivider />
+                  <MenuGroup title="Stuffing">
+                    <MenuItem
+                      as={Link}
+                      href="/services/stuffing"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      Storage → Container
+                    </MenuItem>
+                  </MenuGroup>
+                  <MenuDivider />
+                  <MenuGroup title="Transfers">
+                    <MenuItem
+                      as={Link}
+                      href="/services/stripping-restuffing"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      Stripping & Restuffing
+                    </MenuItem>
+                    <MenuItem
+                      as={Link}
+                      href="/services/transshipment-C2C"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      C2C Transfer
+                    </MenuItem>
+                    <MenuDivider />
+                  </MenuGroup>
+                  <MenuItem
+                    as={Link}
+                    href="/services/vessel-barge"
                     textDecoration="none"
                     _hover={{ textDecoration: "none" }}
                   >
-                    Login
-                  </Button>
-                )}
-              </>
-            )}
-          </HStack>
+                    Vessel/Barge
+                  </MenuItem>
+                  <MenuItem
+                    as={Link}
+                    href="/services/lashing"
+                    textDecoration="none"
+                    _hover={{ textDecoration: "none" }}
+                  >
+                    Lashing Report
+                  </MenuItem>
+                </MenuList>
+              </Menu>
 
-          <IconButton
-            aria-label="Open menu"
-            icon={<HamburgerIcon />}
-            display={{ base: "inline-flex", md: "none" }}
-            onClick={onOpen}
-            variant="ghost"
-            zIndex={10}
-          />
+              {isAuthenticated && (
+                <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
+                  {`Welcome, ${session?.user?.name || session?.user?.email}`}
+                </Text>
+              )}
+              {isLoading ? (
+                <Spinner
+                  size="sm"
+                  thickness="3px"
+                  speed="0.65s"
+                  color="teal.500"
+                  emptyColor="gray.200"
+                  ml={4}
+                />
+              ) : (
+                <>
+                  {isAuthenticated ? (
+                    <ChakraMenu>
+                      <ChakraMenuButton
+                        as={Button}
+                        rounded="full"
+                        variant="link"
+                        cursor="pointer"
+                        minW={0}
+                      >
+                        <Avatar
+                          size="sm"
+                          name={session?.user?.name || session?.user?.email}
+                        />
+                      </ChakraMenuButton>
+                      <ChakraMenuList>
+                        <ChakraMenuItem as={Link} href="/profile?tab=dashboard">
+                          Dashboard
+                        </ChakraMenuItem>
+                        <ChakraMenuItem as={Link} href="/profile?tab=profile">
+                          Profile
+                        </ChakraMenuItem>
+                        <ChakraMenuItem as={Link} href="/profile?tab=settings">
+                          Settings
+                        </ChakraMenuItem>
+                        <MenuDivider />
+                        <ChakraMenuItem onClick={logout} color="red.500">
+                          Logout
+                        </ChakraMenuItem>
+                      </ChakraMenuList>
+                    </ChakraMenu>
+                  ) : (
+                    <Button
+                      onClick={handleLoginOpen}
+                      colorScheme="teal"
+                      size="sm"
+                      textDecoration="none"
+                      _hover={{ textDecoration: "none" }}
+                    >
+                      Login
+                    </Button>
+                  )}
+                </>
+              )}
+            </HStack>
 
-          <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
-            <DrawerOverlay />
-            <DrawerContent>
-              <DrawerCloseButton />
-              <DrawerHeader>Menu</DrawerHeader>
-              <DrawerBody>{navLinks}</DrawerBody>
-            </DrawerContent>
-          </Drawer>
-        </Flex>
+            <IconButton
+              aria-label="Open menu"
+              icon={<HamburgerIcon />}
+              display={{ base: "inline-flex", md: "none" }}
+              onClick={onOpen}
+              variant="ghost"
+              zIndex={10}
+            />
+
+            <Drawer placement="right" onClose={onClose} isOpen={isOpen}>
+              <DrawerOverlay />
+              <DrawerContent>
+                <DrawerCloseButton />
+                <DrawerHeader>Menu</DrawerHeader>
+                <DrawerBody>{navLinks}</DrawerBody>
+              </DrawerContent>
+            </Drawer>
+          </Flex>
+        </Box>
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={handleLoginClose}
+          onRegister={handleRegister}
+        />
       </Box>
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleLoginClose}
-        onRegister={handleRegister}
-      />
-    </Box>
+    </>
   );
 }
