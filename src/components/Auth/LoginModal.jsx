@@ -25,6 +25,7 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { signIn } from "next-auth/react";
 import { db } from "@/utils/firebaseClient";
 import { doc, setDoc } from "firebase/firestore";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // LOGIN MODAL COMPONENT
 export default function LoginModal({ isOpen, onClose }) {
@@ -42,6 +43,7 @@ export default function LoginModal({ isOpen, onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const toast = useToast();
   const inputBg = useColorModeValue("gray.50", "gray.600");
@@ -55,6 +57,16 @@ export default function LoginModal({ isOpen, onClose }) {
   const handleCredentialsSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    if (!recaptchaToken) {
+      toast({
+        title: "RECAPTCHA REQUIRED",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsLoading(false);
+      return;
+    }
     try {
       const result = await signIn("credentials", {
         email: loginCredentials.email,
@@ -120,6 +132,16 @@ export default function LoginModal({ isOpen, onClose }) {
         duration: 3000,
         isClosable: true,
       });
+      return;
+    }
+    if (!recaptchaToken) {
+      toast({
+        title: "RECAPTCHA REQUIRED",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
@@ -253,6 +275,11 @@ export default function LoginModal({ isOpen, onClose }) {
           {mode === "register" ? (
             <Box as="form" onSubmit={handleRegisterSubmit}>
               <VStack spacing={6}>
+                {/* RECAPTCHA WIDGET - REQUIRED */}
+                <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                  onChange={setRecaptchaToken}
+                />
                 <FormControl isRequired>
                   <FormLabel>Email</FormLabel>
                   <Input
@@ -386,6 +413,11 @@ export default function LoginModal({ isOpen, onClose }) {
           ) : (
             <Box as="form" onSubmit={handleCredentialsSubmit}>
               <VStack spacing={6}>
+                {/* RECAPTCHA WIDGET - REQUIRED */}
+                <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+                  onChange={setRecaptchaToken}
+                />
                 <FormControl isRequired>
                   <FormLabel>Email</FormLabel>
                   <Input

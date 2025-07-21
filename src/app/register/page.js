@@ -19,6 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useRouter } from "next/navigation";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // USER REGISTRATION PAGE
 export default function RegisterPage() {
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const toast = useToast();
   const router = useRouter();
@@ -60,6 +62,16 @@ export default function RegisterPage() {
         duration: 3000,
         isClosable: true,
       });
+      return;
+    }
+    if (!recaptchaToken) {
+      toast({
+        title: "RECAPTCHA REQUIRED",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      setIsLoading(false);
       return;
     }
     setIsLoading(true);
@@ -189,6 +201,11 @@ export default function RegisterPage() {
                 </InputRightElement>
               </InputGroup>
             </FormControl>
+            {/* RECAPTCHA WIDGET - REQUIRED */}
+            <ReCAPTCHA
+              sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
+              onChange={setRecaptchaToken}
+            />
             <Button
               type="submit"
               colorScheme="teal"
