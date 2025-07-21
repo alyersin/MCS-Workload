@@ -8,7 +8,36 @@ import Footer from "@/components/Layout/Footer.jsx";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useState } from "react";
-import AuthProvider from "@/components/Providers/SessionProvider";
+import AuthProvider, {
+  useAuthLoading,
+} from "@/components/Providers/SessionProvider";
+import { Spinner, Center } from "@chakra-ui/react";
+
+function AppContent({ children, isLoginPage }) {
+  const { isLoading } = useAuthLoading();
+  if (isLoading) {
+    return (
+      <Center minH="100vh" w="100vw">
+        <Spinner
+          size="xl"
+          thickness="4px"
+          speed="0.65s"
+          color="teal.500"
+          emptyColor="gray.200"
+        />
+      </Center>
+    );
+  }
+  return (
+    <Box minH="100vh" display="flex" flexDirection="column" bg="gray.50">
+      {!isLoginPage && <Header />}
+      <Box as="main" flex="1" display="flex" flexDirection="column">
+        {children}
+      </Box>
+      {!isLoginPage && <Footer />}
+    </Box>
+  );
+}
 
 export default function RootLayout({ children }) {
   const pathname = usePathname();
@@ -49,20 +78,7 @@ export default function RootLayout({ children }) {
       <body suppressHydrationWarning style={{ margin: 0 }}>
         <AuthProvider>
           <ChakraProvider theme={theme}>
-            <Box
-              minH="100vh"
-              display="flex"
-              flexDirection="column"
-              bg="gray.50"
-            >
-              {!isLoginPage && <Header />}
-
-              <Box as="main" flex="1" display="flex" flexDirection="column">
-                {children}
-              </Box>
-
-              {!isLoginPage && <Footer />}
-            </Box>
+            <AppContent isLoginPage={isLoginPage}>{children}</AppContent>
           </ChakraProvider>
         </AuthProvider>
       </body>

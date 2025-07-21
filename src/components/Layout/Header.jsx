@@ -25,6 +25,12 @@ import {
   VStack,
   HStack,
   useColorModeValue,
+  Avatar,
+  Menu as ChakraMenu,
+  MenuButton as ChakraMenuButton,
+  MenuList as ChakraMenuList,
+  MenuItem as ChakraMenuItem,
+  Spinner,
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,7 +41,7 @@ import { useRouter } from "next/navigation";
 export default function Header() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isLoginModalOpen, setLoginModalOpen] = React.useState(false);
-  const { session, isAuthenticated, logout } = useAuth();
+  const { session, isAuthenticated, logout, isLoading } = useAuth();
   const router = useRouter();
 
   const handleLoginOpen = () => setLoginModalOpen(true);
@@ -69,21 +75,27 @@ export default function Header() {
             </MenuItem>
           </MenuGroup>
           <MenuDivider />
-          <MenuGroup title="Stuffing">
-            <MenuItem as={Link} href="/services/stuffing">
-              Stuffing
-            </MenuItem>
-          </MenuGroup>
-          <MenuDivider />
           <MenuGroup title="Stripping">
             <MenuItem as={Link} href="/services/stripping">
-              Stripping
+              Container → Storage
             </MenuItem>
           </MenuGroup>
           <MenuDivider />
-          <MenuItem as={Link} href="/services/transshipment-C2C">
-            Transshipment (C2C)
-          </MenuItem>
+          <MenuGroup title="Stuffing">
+            <MenuItem as={Link} href="/services/stuffing">
+              Storage → Container
+            </MenuItem>
+          </MenuGroup>
+          <MenuDivider />
+          <MenuGroup title="Transfers">
+            <MenuItem as={Link} href="/services/stripping-restuffing">
+              Stripping & Restuffing
+            </MenuItem>
+            <MenuItem as={Link} href="/services/transshipment-C2C">
+              C2C Transfer
+            </MenuItem>
+            <MenuDivider />
+          </MenuGroup>
           <MenuItem as={Link} href="/services/vessel-barge">
             Vessel/Barge
           </MenuItem>
@@ -207,7 +219,7 @@ export default function Header() {
                     textDecoration="none"
                     _hover={{ textDecoration: "none" }}
                   >
-                    Stripping
+                    Container → Storage
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
@@ -218,18 +230,29 @@ export default function Header() {
                     textDecoration="none"
                     _hover={{ textDecoration: "none" }}
                   >
-                    Stuffing
+                    Storage → Container
                   </MenuItem>
                 </MenuGroup>
                 <MenuDivider />
-                <MenuItem
-                  as={Link}
-                  href="/services/transshipment-C2C"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
-                  Transshipment (C2C)
-                </MenuItem>
+                <MenuGroup title="Transfers">
+                  <MenuItem
+                    as={Link}
+                    href="/services/stripping-restuffing"
+                    textDecoration="none"
+                    _hover={{ textDecoration: "none" }}
+                  >
+                    Stripping & Restuffing
+                  </MenuItem>
+                  <MenuItem
+                    as={Link}
+                    href="/services/transshipment-C2C"
+                    textDecoration="none"
+                    _hover={{ textDecoration: "none" }}
+                  >
+                    C2C Transfer
+                  </MenuItem>
+                  <MenuDivider />
+                </MenuGroup>
                 <MenuItem
                   as={Link}
                   href="/services/vessel-barge"
@@ -248,46 +271,64 @@ export default function Header() {
                 </MenuItem>
               </MenuList>
             </Menu>
-
-            {isAuthenticated ? (
-              <HStack spacing={4}>
-                <Text fontSize="sm" color="gray.600">
-                  Welcome, {session?.user?.name}
-                </Text>
-                <Link
-                  href="/profile"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
+            {isLoading ? (
+              <Spinner
+                size="sm"
+                thickness="3px"
+                speed="0.65s"
+                color="teal.500"
+                emptyColor="gray.200"
+                ml={4}
+              />
+            ) : (
+              <>
+                {isAuthenticated && (
+                  <Text fontSize="sm" color="gray.600" ml={4} mr={2}>
+                    {`Welcome, ${session?.user?.name || session?.user?.email}`}
+                  </Text>
+                )}
+                {isAuthenticated ? (
+                  <ChakraMenu>
+                    <ChakraMenuButton
+                      as={Button}
+                      rounded="full"
+                      variant="link"
+                      cursor="pointer"
+                      minW={0}
+                    >
+                      <Avatar
+                        size="sm"
+                        name={session?.user?.name || session?.user?.email}
+                      />
+                    </ChakraMenuButton>
+                    <ChakraMenuList>
+                      <ChakraMenuItem as={Link} href="/profile?tab=dashboard">
+                        Dashboard
+                      </ChakraMenuItem>
+                      <ChakraMenuItem as={Link} href="/profile?tab=profile">
+                        Profile
+                      </ChakraMenuItem>
+                      <ChakraMenuItem as={Link} href="/profile?tab=settings">
+                        Settings
+                      </ChakraMenuItem>
+                      <MenuDivider />
+                      <ChakraMenuItem onClick={logout} color="red.500">
+                        Logout
+                      </ChakraMenuItem>
+                    </ChakraMenuList>
+                  </ChakraMenu>
+                ) : (
                   <Button
-                    colorScheme="blue"
+                    onClick={handleLoginOpen}
+                    colorScheme="teal"
                     size="sm"
                     textDecoration="none"
                     _hover={{ textDecoration: "none" }}
                   >
-                    Profile
+                    Login
                   </Button>
-                </Link>
-                <Button
-                  onClick={logout}
-                  colorScheme="red"
-                  size="sm"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
-                  Logout
-                </Button>
-              </HStack>
-            ) : (
-              <Button
-                onClick={handleLoginOpen}
-                colorScheme="teal"
-                size="sm"
-                textDecoration="none"
-                _hover={{ textDecoration: "none" }}
-              >
-                Login
-              </Button>
+                )}
+              </>
             )}
           </HStack>
 

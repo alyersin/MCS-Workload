@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Box,
   Container,
@@ -55,6 +56,17 @@ export default function ProfilePage() {
     position: "",
   });
   const [loading, setLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab =
+    tabParam === "dashboard"
+      ? 0
+      : tabParam === "profile"
+      ? 1
+      : tabParam === "settings"
+      ? 2
+      : 0;
+  const [tabIndex, setTabIndex] = useState(initialTab);
 
   // ENSURE FIREBASE AUTH SESSION
   useEffect(() => {
@@ -166,7 +178,7 @@ export default function ProfilePage() {
             </Text>
           </Box>
 
-          <Tabs variant="enclosed">
+          <Tabs variant="enclosed" index={tabIndex} onChange={setTabIndex}>
             <TabList>
               <Tab>Dashboard</Tab>
               <Tab>Profile</Tab>
