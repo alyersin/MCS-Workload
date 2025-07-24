@@ -326,6 +326,46 @@ export default function SurveyForm({
             : [],
       }),
     });
+    // ========== ORDER TRACKING: CREATE ORDER IN BACKEND ==========
+    // ORDER API URL FROM ENV
+    const ORDER_API_URL = process.env.NEXT_PUBLIC_ORDER_API_URL;
+    try {
+      const orderRes = await fetch(ORDER_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session?.user?.uid,
+          orderType: secretAccess,
+          details: form,
+        }),
+      });
+      const orderData = await orderRes.json();
+      if (orderData.success) {
+        toast({
+          title: `ORDER CREATED! ORDER ID: ${orderData.order.order_id}`,
+          status: "success",
+          duration: 4000,
+          isClosable: true,
+          position: "top",
+        });
+      } else {
+        toast({
+          title: "ORDER TRACKING FAILED",
+          status: "warning",
+          duration: 4000,
+          isClosable: true,
+          position: "top",
+        });
+      }
+    } catch (err) {
+      toast({
+        title: "ORDER TRACKING ERROR",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+        position: "top",
+      });
+    }
     toast({
       title: "FORM SUBMITTED AND EMAILED SUCCESSFULLY",
       status: "success",

@@ -3,6 +3,7 @@ const multer = require("multer");
 const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
+const { Pool } = require("pg");
 
 const app = express();
 
@@ -107,6 +108,66 @@ app.post("/upload", upload.array("file"), (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Server error during file upload." });
+  }
+});
+
+// ORDER ID GENERATOR
+function generateOrderId(type) {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const random = Math.random().toString(36).substr(2, 6).toUpperCase();
+  return `${type.toUpperCase()}-${date}-${random}`;
+}
+
+// POSTGRESQL CONNECTION SETUP
+const pool = new Pool({
+  user: "your_pg_user", // SET TO YOUR USER
+  host: "localhost",
+  database: "mcs_orders", // SET TO YOUR DB NAME
+  password: "your_pg_password", // SET TO YOUR PASSWORD
+  port: 5432,
+});
+
+// ========== ORDER CREATION ROUTE ==========
+app.post("/api/orders", async (req, res) => {
+  try {
+    // userId MUST BE FIREBASE AUTH UID
+    const { userId, orderType, details } = req.body;
+    if (!userId || !orderType || !details) {
+      return res
+        .status(400)
+        .json({ success: false, message: "MISSING FIELDS" });
+    }
+    const orderId = generateOrderId(orderType);
+    const result = await pool.query(
+      `INSERT INTO orders (order_id, user_id, order_type, status, details)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [orderId, userId, orderType, "In Progress", details]
+    );
+    res.json({ success: true, order: result.rows[0] });
+  } catch (err) {
+    console.error("ORDER CREATION ERROR:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "SERVER ERROR DURING ORDER CREATION" });
+  }
+});
+
+// ========== GET ORDERS FOR USER ==========
+app.get("/api/orders/:userId", async (req, res) => {
+  try {
+    // userId IS FIREBASE AUTH UID
+    const { userId } = req.params;
+    const result = await pool.query(
+      `SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC`,
+      [userId]
+    );
+    res.json({ success: true, orders: result.rows });
+  } catch (err) {
+    console.error("Fetch orders error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error fetching orders." });
   }
 });
 

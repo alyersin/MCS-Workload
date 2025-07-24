@@ -225,39 +225,7 @@ export default function ProfilePage() {
                     <Heading size="md">Recent Activity</Heading>
                   </CardHeader>
                   <CardBody>
-                    <VStack spacing={4} align="stretch">
-                      <HStack justify="space-between">
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium">
-                            Container → Truck Service
-                          </Text>
-                          <Text fontSize="sm" color="gray.600">
-                            Order #12345 completed
-                          </Text>
-                        </VStack>
-                        <Badge colorScheme="green">Completed</Badge>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium">Storage → Container</Text>
-                          <Text fontSize="sm" color="gray.600">
-                            Order #12344 in progress
-                          </Text>
-                        </VStack>
-                        <Badge colorScheme="blue">In Progress</Badge>
-                      </HStack>
-                      <Divider />
-                      <HStack justify="space-between">
-                        <VStack align="start" spacing={1}>
-                          <Text fontWeight="medium">Transshipment (C2C)</Text>
-                          <Text fontSize="sm" color="gray.600">
-                            Order #12343 scheduled
-                          </Text>
-                        </VStack>
-                        <Badge colorScheme="yellow">Scheduled</Badge>
-                      </HStack>
-                    </VStack>
+                    <RecentOrders />
                   </CardBody>
                 </Card>
               </TabPanel>
@@ -470,5 +438,70 @@ export default function ProfilePage() {
         </VStack>
       </Container>
     </Box>
+  );
+}
+
+// ========== RECENT ORDERS COMPONENT ==========
+function RecentOrders() {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const user = getAuth().currentUser;
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      setError("You must be logged in to see your orders.");
+      return;
+    }
+    setLoading(true);
+    fetch(
+      `${process.env.NEXT_PUBLIC_ORDER_API_URL.replace(
+        "/api/orders",
+        ""
+      )}/api/orders/${user.uid}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        setOrders(data.orders || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setError("Failed to fetch orders.");
+        setLoading(false);
+      });
+  }, [user]);
+
+  if (loading) return <div>Loading recent activity...</div>;
+  if (error) return <div>{error}</div>;
+
+  return (
+    <VStack spacing={4} align="stretch">
+      {orders.length === 0 ? (
+        <Text>No recent orders found.</Text>
+      ) : (
+        orders.map((order) => (
+          <HStack key={order.order_id} justify="space-between">
+            <VStack align="start" spacing={1}>
+              <Text fontWeight="medium">{order.order_type}</Text>
+              <Text fontSize="sm" color="gray.600">
+                Order ID: {order.order_id} | {order.status}
+              </Text>
+            </VStack>
+            <Badge
+              colorScheme={
+                order.status === "Completed"
+                  ? "green"
+                  : order.status === "In Progress"
+                  ? "blue"
+                  : "yellow"
+              }
+            >
+              {order.status}
+            </Badge>
+          </HStack>
+        ))
+      )}
+    </VStack>
   );
 }
