@@ -768,6 +768,25 @@ export default function SurveyForm({
                   </FormControl>
                 );
               }
+              if (
+                field.type === "customLashing" &&
+                form.lashingPerformedBy === "Custom"
+              ) {
+                return (
+                  <FormControl key={field.name} isRequired={field.required}>
+                    <FormLabel>{field.label}</FormLabel>
+                    <Input
+                      name={field.name}
+                      value={form[field.name]}
+                      onChange={handleChange}
+                      bg={inputBg}
+                      borderRadius="md"
+                      focusBorderColor={inputFocusBorder}
+                      placeholder={field.placeholder}
+                    />
+                  </FormControl>
+                );
+              }
               return null;
             })}
             {/* FILE UPLOAD FIELD RENDERED ONCE BELOW ALL FIELDS */}

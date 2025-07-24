@@ -1,24 +1,9 @@
+// Updated `page.js` for Lashing (RaportAmaraj) - following pattern from Stripping/Stuffing
+
 "use client";
-import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  FormControl,
-  FormLabel,
-  Input,
-  Text,
-  Heading,
-  VStack,
-  Select,
-  useToast,
-  useColorModeValue,
-  Container,
-  Divider,
-} from "@chakra-ui/react";
-import { useSecretAccess } from "@/hooks/useSecretAccess";
+import React from "react";
 import SurveyForm from "@/components/SurveyForm";
 
-// LASHING SERVICE PAGE
 const loadingLocationOptions = [
   "DB Schenker",
   "DP World",
@@ -29,6 +14,7 @@ const loadingLocationOptions = [
   "Sea Container Services",
   "SOCEP",
 ];
+
 const storagePriorOptions = ["Road trailer", "Terminal storage"];
 const stowagePerformedByOptions = [
   "DB Schenker",
@@ -41,6 +27,15 @@ const stowagePerformedByOptions = [
   "SOCEP SA",
 ];
 
+const lashingPerformedByOptions = ["BACIOIU IMPORT EXPORT SRL", "Custom"];
+
+const principalOptions = [
+  "Eastship Projects & Logistics SRL",
+  "Petroconst SA",
+  "Life Logistics SRL",
+  "Custom",
+];
+
 const fields = [
   {
     name: "reportNumber",
@@ -50,10 +45,17 @@ const fields = [
     inputType: "number",
   },
   {
-    name: "principal",
+    name: "principalName",
     label: "Principal's Name",
-    type: "input",
+    type: "select",
     required: true,
+  },
+  {
+    name: "customPrincipal",
+    label: "Custom Principal Name",
+    type: "customPrincipal",
+    required: false,
+    placeholder: "Enter custom principal name",
   },
   {
     name: "oversize",
@@ -96,8 +98,15 @@ const fields = [
   {
     name: "lashingPerformedBy",
     label: "Lashing Performed By",
-    type: "input",
+    type: "select",
     required: true,
+  },
+  {
+    name: "customLashing",
+    label: "Custom Lashing Name",
+    type: "customLashing",
+    required: false,
+    placeholder: "Enter custom lashing name",
   },
   {
     name: "otherDetails",
@@ -118,23 +127,30 @@ const dropdownOptions = {
   loadingLocation: loadingLocationOptions,
   storagePrior: storagePriorOptions,
   stowagePerformedBy: stowagePerformedByOptions,
+  lashingPerformedBy: lashingPerformedByOptions,
+  principalName: principalOptions,
 };
 
 export default function RaportAmaraj() {
-  // MAP LASHING FIELDS TO BACKEND EXPECTED FIELDS
   const handleLashingSubmit = (form) => {
     const mapped = {
       report: form.reportNumber,
       date: form.dateOfLoading,
       portArea: form.loadingLocation,
       operator: form.stowagePerformedBy,
-      principalName: form.principal,
+      principalName:
+        form.principalName === "Custom"
+          ? form.customPrincipal
+          : form.principalName,
       cargoDescription: form.cargoDescription,
       grossWeight: form.oversize,
       shipper: "",
       consignee: "",
+      lashingBy:
+        form.lashingPerformedBy === "Custom"
+          ? form.customLashing
+          : form.lashingPerformedBy,
       surveyFindings: form.otherDetails,
-      // ADD CUSTOM FIELDS IF NEEDED
       _serviceName: "RaportAmaraj",
     };
     fetch("/api/send-pdf", {
@@ -143,6 +159,7 @@ export default function RaportAmaraj() {
       body: JSON.stringify(mapped),
     });
   };
+
   return (
     <SurveyForm
       title="Lashing Report"
