@@ -171,6 +171,22 @@ app.get("/api/orders/:userId", async (req, res) => {
   }
 });
 
+// ========== GET ALL ORDERS (FOR MASTER ACCOUNT ONLY) ==========
+app.get("/api/orders", async (req, res) => {
+  try {
+    // ONLY MASTER/RECEIVER SHOULD USE THIS ENDPOINT
+    const result = await pool.query(
+      `SELECT * FROM orders ORDER BY created_at DESC`
+    );
+    res.json({ success: true, orders: result.rows });
+  } catch (err) {
+    console.error("Fetch all orders error:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error fetching all orders." });
+  }
+});
+
 // ========== Simple GET ==========
 app.get("/", (req, res) => {
   res.send("File upload server is running.");

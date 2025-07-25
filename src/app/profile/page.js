@@ -68,12 +68,11 @@ export default function ProfilePage() {
       : 0;
   const [tabIndex, setTabIndex] = useState(initialTab);
 
-  // ENSURE FIREBASE AUTH SESSION
-  useEffect(() => {
-    if (isAuthenticated) {
-      signInFirebaseWithCustomToken();
-    }
-  }, [isAuthenticated]);
+  // MASTER UID FOR ORDER DASHBOARD
+  const MASTER_UID = "quoewgWQEOYmsYbv7JNsNPhR1rh1";
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState("");
 
   // FETCH USER PROFILE FROM FIRESTORE ON MOUNT
   useEffect(() => {
@@ -99,26 +98,59 @@ export default function ProfilePage() {
     });
     return () => unsubscribe();
   }, [isAuthenticated, session?.user?.email]);
+  // NOTE: IF YOU SEE FIREBASE PERMISSION ERRORS, CHECK YOUR FIRESTORE SECURITY RULES
+
+  // FETCH ORDERS FOR DASHBOARD STATS AND RECENT ACTIVITY
+  useEffect(() => {
+    // USE SESSION USER UID FOR AUTH CHECK
+    if (!isAuthenticated || !session?.user?.uid) {
+      setOrders([]);
+      setOrdersLoading(false);
+      setOrdersError("You must be logged in to see your orders.");
+      return;
+    }
+    setOrdersLoading(true);
+    const userUid = session.user.uid;
+    // IF MASTER, FETCH ALL ORDERS; ELSE, FETCH ONLY USER'S ORDERS
+    const endpoint =
+      userUid === MASTER_UID
+        ? `${process.env.NEXT_PUBLIC_ORDER_API_URL}`
+        : `${process.env.NEXT_PUBLIC_ORDER_API_URL}/${userUid}`;
+    fetch(endpoint)
+      .then((res) => res.json())
+      .then((data) => {
+        setOrders(data.orders || []);
+        setOrdersLoading(false);
+      })
+      .catch(() => {
+        setOrdersError("Failed to fetch orders.");
+        setOrdersLoading(false);
+      });
+  }, [isAuthenticated, session?.user?.uid]);
+
+  // CALCULATE STATS FROM ORDERS
+  const totalOrders = orders.length;
+  const activeServices = orders.filter(
+    (o) => o.status === "In Progress"
+  ).length;
 
   const bgColor = useColorModeValue("gray.50", "gray.900");
   const cardBg = useColorModeValue("white", "gray.800");
 
+  // HANDLE SAVE: UPDATE USER PROFILE IN FIRESTORE
   const handleSave = async () => {
     try {
       const auth = getAuth();
       const currentUser = auth.currentUser;
       if (!currentUser) throw new Error("Not authenticated");
       const uid = currentUser.uid;
-
       const userRef = doc(db, "users", uid);
       const { name, phone, company, position, email } = profileData;
-
       await setDoc(
         userRef,
         { name, phone, company, position, email },
         { merge: true }
       );
-
       toast({
         title: "Profile Updated",
         description: "Your profile has been successfully updated.",
@@ -126,7 +158,6 @@ export default function ProfilePage() {
         duration: 3000,
         isClosable: true,
       });
-
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -197,10 +228,14 @@ export default function ProfilePage() {
                     <CardBody>
                       <Stat>
                         <StatLabel>Total Orders</StatLabel>
-                        <StatNumber>24</StatNumber>
+                        <StatNumber>
+                          {ordersLoading ? <Spinner size="sm" /> : totalOrders}
+                        </StatNumber>
+                        {/* STAT HELP TEXT CAN BE CUSTOMIZED OR REMOVED */}
                         <StatHelpText>
                           <StatArrow type="increase" />
-                          12.5%
+                          {/* PLACEHOLDER PERCENTAGE */}
+                          0%
                         </StatHelpText>
                       </Stat>
                     </CardBody>
@@ -210,10 +245,17 @@ export default function ProfilePage() {
                     <CardBody>
                       <Stat>
                         <StatLabel>Active Services</StatLabel>
-                        <StatNumber>3</StatNumber>
+                        <StatNumber>
+                          {ordersLoading ? (
+                            <Spinner size="sm" />
+                          ) : (
+                            activeServices
+                          )}
+                        </StatNumber>
                         <StatHelpText>
                           <StatArrow type="increase" />
-                          8.2%
+                          {/* PLACEHOLDER PERCENTAGE */}
+                          0%
                         </StatHelpText>
                       </Stat>
                     </CardBody>
@@ -225,7 +267,11 @@ export default function ProfilePage() {
                     <Heading size="md">Recent Activity</Heading>
                   </CardHeader>
                   <CardBody>
-                    <RecentOrders />
+                    <RecentOrders
+                      orders={orders}
+                      loading={ordersLoading}
+                      error={ordersError}
+                    />
                   </CardBody>
                 </Card>
               </TabPanel>
@@ -442,36 +488,7 @@ export default function ProfilePage() {
 }
 
 // ========== RECENT ORDERS COMPONENT ==========
-function RecentOrders() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const user = getAuth().currentUser;
-
-  useEffect(() => {
-    if (!user) {
-      setLoading(false);
-      setError("You must be logged in to see your orders.");
-      return;
-    }
-    setLoading(true);
-    fetch(
-      `${process.env.NEXT_PUBLIC_ORDER_API_URL.replace(
-        "/api/orders",
-        ""
-      )}/api/orders/${user.uid}`
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        setOrders(data.orders || []);
-        setLoading(false);
-      })
-      .catch(() => {
-        setError("Failed to fetch orders.");
-        setLoading(false);
-      });
-  }, [user]);
-
+function RecentOrders({ orders, loading, error }) {
   if (loading) return <div>Loading recent activity...</div>;
   if (error) return <div>{error}</div>;
 
