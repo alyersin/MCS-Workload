@@ -42,6 +42,8 @@ import { db } from "@/utils/firebaseClient";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { signInFirebaseWithCustomToken } from "@/utils/ensureFirebaseAuth";
+import CompleteOrderModal from "@/components/Modals/CompleteOrderModal";
+import CompletedOrderDetailsModal from "@/components/Modals/CompletedOrderDetailsModal";
 
 // USER PROFILE PAGE
 export default function ProfilePage() {
@@ -73,6 +75,118 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [ordersError, setOrdersError] = useState("");
+
+  // COMPLETED ORDERS STATE
+  const [completedOrders, setCompletedOrders] = useState([]);
+  const [completedOrdersLoading, setCompletedOrdersLoading] = useState(true);
+  const [completedOrdersError, setCompletedOrdersError] = useState("");
+
+  // COMPLETE ORDER MODAL STATE
+  const [completeOrderModal, setCompleteOrderModal] = useState({
+    isOpen: false,
+    order: null,
+  });
+
+  // COMPLETED ORDER DETAILS MODAL STATE
+  const [completedOrderDetailsModal, setCompletedOrderDetailsModal] = useState({
+    isOpen: false,
+    order: null,
+  });
+
+  // REFRESH ORDERS FUNCTION
+  const refreshOrders = () => {
+    if (!isAuthenticated || !session?.user?.uid) return;
+
+    setOrdersLoading(true);
+    const userUid = session.user.uid;
+    const endpoint =
+      userUid === MASTER_UID
+        ? `${process.env.NEXT_PUBLIC_ORDER_API_URL}`
+        : `${process.env.NEXT_PUBLIC_ORDER_API_URL}/${userUid}`;
+
+    fetch(endpoint)
+      .then((res) => res.json())
+      .then((data) => {
+        setOrders(data.orders || []);
+        setOrdersLoading(false);
+      })
+      .catch(() => {
+        setOrdersError("Failed to fetch orders.");
+        setOrdersLoading(false);
+      });
+  };
+
+  // REFRESH COMPLETED ORDERS FUNCTION
+  const refreshCompletedOrders = () => {
+    if (!isAuthenticated || !session?.user?.uid) {
+      console.log("REFRESH COMPLETED ORDERS: Not authenticated or no UID"); // DEBUG LOG
+      return;
+    }
+
+    console.log("REFRESH COMPLETED ORDERS: Starting fetch..."); // DEBUG LOG
+    setCompletedOrdersLoading(true);
+    const userUid = session.user.uid;
+    const endpoint =
+      userUid === MASTER_UID
+        ? `${process.env.NEXT_PUBLIC_ORDER_API_URL}/completed-orders`
+        : `${process.env.NEXT_PUBLIC_ORDER_API_URL}/completed-orders/${userUid}`;
+
+    console.log("FETCHING COMPLETED ORDERS FROM:", endpoint); // DEBUG LOG
+    console.log("USER UID:", userUid, "MASTER UID:", MASTER_UID); // DEBUG LOG
+    console.log("API URL:", process.env.NEXT_PUBLIC_ORDER_API_URL); // DEBUG LOG
+
+    fetch(endpoint)
+      .then((res) => {
+        console.log("COMPLETED ORDERS RESPONSE STATUS:", res.status); // DEBUG LOG
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        console.log("COMPLETED ORDERS RESPONSE:", data); // DEBUG LOG
+        console.log("COMPLETED ORDERS COUNT:", data.orders?.length || 0); // DEBUG LOG
+        console.log("COMPLETED ORDERS SUCCESS:", data.success); // DEBUG LOG
+        setCompletedOrders(data.orders || []);
+        setCompletedOrdersLoading(false);
+      })
+      .catch((error) => {
+        console.error("COMPLETED ORDERS ERROR:", error); // DEBUG LOG
+        setCompletedOrdersError("Failed to fetch completed orders.");
+        setCompletedOrdersLoading(false);
+      });
+  };
+
+  // OPEN COMPLETE ORDER MODAL
+  const openCompleteOrderModal = (order) => {
+    setCompleteOrderModal({
+      isOpen: true,
+      order: order,
+    });
+  };
+
+  // CLOSE COMPLETE ORDER MODAL
+  const closeCompleteOrderModal = () => {
+    setCompleteOrderModal({
+      isOpen: false,
+      order: null,
+    });
+  };
+
+  const openCompletedOrderDetailsModal = (order) => {
+    setCompletedOrderDetailsModal({ isOpen: true, order });
+  };
+
+  const closeCompletedOrderDetailsModal = () => {
+    setCompletedOrderDetailsModal({ isOpen: false, order: null });
+  };
+
+  // HANDLE ORDER COMPLETION
+  const handleOrderComplete = () => {
+    console.log("HANDLE ORDER COMPLETE CALLED"); // DEBUG LOG
+    refreshOrders();
+    refreshCompletedOrders();
+  };
 
   // FETCH USER PROFILE FROM FIRESTORE ON MOUNT
   useEffect(() => {
@@ -135,6 +249,20 @@ export default function ProfilePage() {
       });
   }, [isAuthenticated, session?.user?.uid]);
 
+  // FETCH COMPLETED ORDERS
+  useEffect(() => {
+    if (!isAuthenticated || !session?.user?.uid) {
+      setCompletedOrders([]);
+      setCompletedOrdersLoading(false);
+      setCompletedOrdersError(
+        "You must be logged in to see your completed orders."
+      );
+      return;
+    }
+    console.log("FETCHING COMPLETED ORDERS FOR USER:", session?.user?.uid); // DEBUG LOG
+    refreshCompletedOrders();
+  }, [isAuthenticated, session?.user?.uid]);
+
   // CALCULATE STATS FROM ORDERS
   const totalOrders = orders.length;
   const activeServices = orders.filter(
@@ -190,7 +318,16 @@ export default function ProfilePage() {
   };
 
   // DEBUG: LOG RENDER STATE
-  console.log("RENDER", { ordersLoading, orders, ordersError });
+  console.log("RENDER", {
+    ordersLoading,
+    orders: orders.length,
+    ordersError,
+    completedOrdersLoading,
+    completedOrders: completedOrders.length,
+    completedOrdersError,
+    isAuthenticated: !!isAuthenticated,
+    userUid: session?.user?.uid,
+  });
 
   if (!isAuthenticated) {
     return <ProtectedRoute />;
@@ -224,6 +361,7 @@ export default function ProfilePage() {
             <TabList>
               <Tab>Dashboard</Tab>
               <Tab>Profile</Tab>
+              <Tab>Completed Orders</Tab>
               <Tab>Settings</Tab>
             </TabList>
 
@@ -282,6 +420,7 @@ export default function ProfilePage() {
                       orders={orders}
                       loading={ordersLoading}
                       error={ordersError}
+                      onCompleteOrder={openCompleteOrderModal}
                     />
                   </CardBody>
                 </Card>
@@ -412,6 +551,33 @@ export default function ProfilePage() {
                 </Grid>
               </TabPanel>
 
+              {/* Completed Orders Tab */}
+              <TabPanel>
+                <Card bg={cardBg}>
+                  <CardHeader>
+                    <HStack justify="space-between">
+                      <Heading size="md">Completed Orders</Heading>
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        onClick={refreshCompletedOrders}
+                        isLoading={completedOrdersLoading}
+                      >
+                        Refresh
+                      </Button>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody>
+                    <CompletedOrdersList
+                      orders={completedOrders}
+                      loading={completedOrdersLoading}
+                      error={completedOrdersError}
+                      onOrderClick={openCompletedOrderDetailsModal}
+                    />
+                  </CardBody>
+                </Card>
+              </TabPanel>
+
               <TabPanel>
                 <Card bg={cardBg}>
                   <CardHeader>
@@ -494,12 +660,68 @@ export default function ProfilePage() {
           </Tabs>
         </VStack>
       </Container>
+      <CompleteOrderModal
+        isOpen={completeOrderModal.isOpen}
+        onClose={closeCompleteOrderModal}
+        order={completeOrderModal.order}
+        onComplete={handleOrderComplete}
+      />
+      <CompletedOrderDetailsModal
+        isOpen={completedOrderDetailsModal.isOpen}
+        onClose={closeCompletedOrderDetailsModal}
+        order={completedOrderDetailsModal.order}
+      />
     </Box>
   );
 }
 
 // ========== RECENT ORDERS COMPONENT ==========
-function RecentOrders({ orders, loading, error }) {
+function RecentOrders({ orders, loading, error, onCompleteOrder }) {
+  const toast = useToast();
+
+  // DOWNLOAD REPORT FUNCTION
+  const downloadReport = async (orderId) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_ORDER_API_URL}/download-all-completed-files/${orderId}`
+      );
+
+      if (response.ok) {
+        // CREATE BLOB AND DOWNLOAD
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${orderId}-report.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast({
+          title: "DOWNLOAD SUCCESSFUL",
+          description: "Report downloaded successfully.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
+      } else {
+        throw new Error("DOWNLOAD FAILED");
+      }
+    } catch (error) {
+      console.error("Download report error:", error);
+      toast({
+        title: "DOWNLOAD FAILED",
+        description: "Failed to download report. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+  };
+
   if (loading) return <div>Loading recent activity...</div>;
   if (error) return <div>{error}</div>;
 
@@ -516,18 +738,143 @@ function RecentOrders({ orders, loading, error }) {
                 Order ID: {order.order_id} | {order.status}
               </Text>
             </VStack>
-            <Badge
-              colorScheme={
-                order.status === "Completed"
-                  ? "green"
-                  : order.status === "In Progress"
-                  ? "blue"
-                  : "yellow"
-              }
-            >
-              {order.status}
-            </Badge>
+            <HStack spacing={2}>
+              <Badge
+                colorScheme={
+                  order.status === "Completed"
+                    ? "green"
+                    : order.status === "In Progress"
+                    ? "blue"
+                    : "yellow"
+                }
+              >
+                {order.status}
+              </Badge>
+              {order.status === "Completed" && (
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={() => downloadReport(order.order_id)}
+                >
+                  Download Report
+                </Button>
+              )}
+              {order.status === "In Progress" && (
+                <Button
+                  size="sm"
+                  colorScheme="green"
+                  onClick={() => onCompleteOrder(order)}
+                >
+                  Complete Order
+                </Button>
+              )}
+            </HStack>
           </HStack>
+        ))
+      )}
+    </VStack>
+  );
+}
+
+// ========== COMPLETED ORDERS LIST COMPONENT ==========
+function CompletedOrdersList({ orders, loading, error, onOrderClick }) {
+  const toast = useToast();
+
+  console.log("COMPLETED ORDERS LIST RENDER:", {
+    orders: orders.length,
+    loading,
+    error,
+  }); // DEBUG LOG
+
+  // DOWNLOAD REPORT FUNCTION
+  const downloadReport = async (orderId, event) => {
+    event.stopPropagation(); // PREVENT MODAL FROM OPENING
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_ORDER_API_URL}/download-all-completed-files/${orderId}`
+      );
+
+      if (response.ok) {
+        // CREATE BLOB AND DOWNLOAD
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${orderId}-report.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast({
+          title: "DOWNLOAD SUCCESSFUL",
+          description: "Report downloaded successfully.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+          position: "top",
+        });
+      } else {
+        throw new Error("DOWNLOAD FAILED");
+      }
+    } catch (error) {
+      console.error("Download report error:", error);
+      toast({
+        title: "DOWNLOAD FAILED",
+        description: "Failed to download report. Please try again.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+  };
+
+  if (loading) return <div>Loading completed orders...</div>;
+  if (error) return <div>{error}</div>;
+
+  return (
+    <VStack spacing={4} align="stretch">
+      {orders.length === 0 ? (
+        <Text>No completed orders found.</Text>
+      ) : (
+        orders.map((order) => (
+          <Box
+            key={order.order_id}
+            p={4}
+            bg="gray.50"
+            borderRadius="md"
+            cursor="pointer"
+            _hover={{ bg: "gray.100" }}
+            onClick={() => onOrderClick(order)}
+            transition="background-color 0.2s"
+          >
+            <HStack justify="space-between">
+              <VStack align="start" spacing={1}>
+                <Text fontWeight="medium">{order.order_type}</Text>
+                <Text fontSize="sm" color="gray.600">
+                  Order ID: {order.order_id}
+                </Text>
+                <Text fontSize="sm" color="gray.600">
+                  Completed:{" "}
+                  {new Date(order.completion_date).toLocaleDateString()}
+                </Text>
+              </VStack>
+              <VStack align="end" spacing={1}>
+                <Badge colorScheme="green">COMPLETED</Badge>
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={(e) => downloadReport(order.order_id, e)}
+                >
+                  Download Report
+                </Button>
+                <Text fontSize="xs" color="blue.600">
+                  Click to view details
+                </Text>
+              </VStack>
+            </HStack>
+          </Box>
         ))
       )}
     </VStack>

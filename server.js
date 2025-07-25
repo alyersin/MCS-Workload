@@ -4,7 +4,9 @@ const cors = require("cors");
 const path = require("path");
 const fs = require("fs");
 const { Pool } = require("pg");
+const archiver = require("archiver");
 
+// REMOVED DOTENV - USING HARDCODED VALUES LIKE ORIGINAL SETUP
 const app = express();
 
 app.use(express.json({ limit: "1000mb" })); // adjust as needed
@@ -21,7 +23,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: allowedOrigins,
-    methods: ["GET", "POST", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "OPTIONS"],
     allowedHeaders: [
       "Content-Type",
       "Authorization",
@@ -120,10 +122,10 @@ function generateOrderId(type) {
 
 // POSTGRESQL CONNECTION SETUP
 const pool = new Pool({
-  user: "your_pg_user", // SET TO YOUR USER
+  user: "alyersin", // SET TO YOUR USER
   host: "localhost",
   database: "mcs_orders", // SET TO YOUR DB NAME
-  password: "your_pg_password", // SET TO YOUR PASSWORD
+  password: "8642317!", // SET TO YOUR PASSWORD
   port: 5432,
 });
 
@@ -142,7 +144,7 @@ app.post("/api/orders", async (req, res) => {
       `INSERT INTO orders (order_id, user_id, order_type, status, details)
        VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [orderId, userId, orderType, "In Progress", details]
+      [orderId, userId, orderType, "In Progress", JSON.stringify(details)]
     );
     res.json({ success: true, order: result.rows[0] });
   } catch (err) {
@@ -187,12 +189,410 @@ app.get("/api/orders", async (req, res) => {
   }
 });
 
+// ========== COMPLETE ORDER ROUTE ==========
+app.post(
+  "/api/orders/complete-order",
+  upload.array("file"),
+  async (req, res) => {
+    try {
+      const { orderId, userId, orderType, completionDate } = req.body;
+
+      // VALIDATE REQUIRED FIELDS
+      if (!orderId || !userId || !orderType) {
+        return res.status(400).json({
+          success: false,
+          message: "MISSING REQUIRED FIELDS",
+        });
+      }
+
+      // SECRET KEY VALIDATION IS HANDLED ON FRONTEND - NO NEED TO VALIDATE HERE
+
+      // CREATE COMPLETED ORDERS FOLDER
+      const completedOrdersDir = path.join(
+        __dirname,
+        "uploads",
+        "COMPLETED ORDERS"
+      );
+      fs.mkdirSync(completedOrdersDir, { recursive: true });
+
+      // MOVE UPLOADED FILES TO COMPLETED ORDERS FOLDER
+      const uploadedFiles = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const orderFolder = path.join(completedOrdersDir, orderId);
+          fs.mkdirSync(orderFolder, { recursive: true });
+
+          const destPath = path.join(orderFolder, file.filename);
+          fs.renameSync(file.path, destPath);
+          uploadedFiles.push(file.filename);
+        }
+      }
+
+      // GET ORIGINAL ORDER DATA
+      const orderResult = await pool.query(
+        `SELECT * FROM orders WHERE order_id = $1`,
+        [orderId]
+      );
+
+      if (orderResult.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "ORDER NOT FOUND",
+        });
+      }
+
+      const originalOrder = orderResult.rows[0];
+
+      // VALIDATE AND CLEAN DATA BEFORE INSERTION
+      const cleanOrderId = String(orderId).trim();
+      const cleanUserId = String(userId).trim();
+      const cleanOrderType = String(orderType).trim();
+      const cleanCompletionDate = completionDate
+        ? new Date(completionDate)
+        : new Date();
+      const cleanOriginalData = JSON.stringify(originalOrder);
+      const createdBy = originalOrder.user_id; // original creator
+      const completedBy = cleanUserId; // the user completing the order (usually master)
+
+      console.log("CLEANED DATA:", {
+        orderId: cleanOrderId,
+        userId: cleanUserId,
+        orderType: cleanOrderType,
+        originalOrderUserId: originalOrder.user_id,
+        createdBy,
+        completedBy,
+      });
+
+      // INSERT INTO COMPLETED_ORDERS TABLE WITH VALIDATED DATA
+      console.log("INSERTING INTO COMPLETED_ORDERS:", {
+        orderId: cleanOrderId,
+        userId: cleanUserId,
+        orderType: cleanOrderType,
+        completionDate: cleanCompletionDate,
+        createdBy,
+        completedBy,
+      });
+
+      try {
+        await pool.query(
+          `INSERT INTO completed_orders (
+              order_id, user_id, order_type, completion_date, original_order_data, created_by, completed_by
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            cleanOrderId,
+            createdBy, // user_id is now the creator for compatibility
+            cleanOrderType,
+            cleanCompletionDate,
+            cleanOriginalData,
+            createdBy,
+            completedBy,
+          ]
+        );
+
+        console.log("SUCCESSFULLY INSERTED INTO COMPLETED_ORDERS");
+      } catch (insertError) {
+        console.error("ERROR INSERTING INTO COMPLETED_ORDERS:", insertError);
+        throw insertError;
+      }
+
+      // UPDATE ORDER STATUS TO COMPLETED
+      await pool.query(
+        `UPDATE orders SET status = 'Completed' WHERE order_id = $1`,
+        [cleanOrderId]
+      );
+
+      res.json({
+        success: true,
+        message: "ORDER COMPLETED SUCCESSFULLY",
+        uploadedFiles,
+        orderId: cleanOrderId,
+      });
+    } catch (err) {
+      console.error("Complete order error:", err);
+      res.status(500).json({
+        success: false,
+        message: "SERVER ERROR DURING ORDER COMPLETION",
+      });
+    }
+  }
+);
+
+// ========== UPDATE ORDER STATUS ROUTE ==========
+app.put("/api/orders/complete-order", async (req, res) => {
+  try {
+    const { orderId, userId } = req.body;
+
+    // VALIDATE REQUIRED FIELDS
+    if (!orderId || !userId) {
+      return res.status(400).json({
+        success: false,
+        message: "MISSING REQUIRED FIELDS",
+      });
+    }
+
+    // UPDATE ORDER STATUS TO COMPLETED
+    const result = await pool.query(
+      `UPDATE orders SET status = 'Completed' WHERE order_id = $1 AND user_id = $2`,
+      [orderId, userId]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "ORDER NOT FOUND OR NOT AUTHORIZED",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "ORDER STATUS UPDATED SUCCESSFULLY",
+      orderId,
+    });
+  } catch (err) {
+    console.error("Update order status error:", err);
+    res.status(500).json({
+      success: false,
+      message: "SERVER ERROR DURING ORDER STATUS UPDATE",
+    });
+  }
+});
+
+// ========== GET COMPLETED ORDERS FOR USER ==========
+app.get("/api/completed-orders/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("FETCHING COMPLETED ORDERS FOR USER:", userId);
+
+    const result = await pool.query(
+      `SELECT * FROM completed_orders WHERE created_by = $1 OR completed_by = $1 ORDER BY completion_date DESC`,
+      [userId]
+    );
+
+    console.log("COMPLETED ORDERS FOUND:", result.rows.length);
+    res.json({ success: true, orders: result.rows });
+  } catch (err) {
+    console.error("Fetch completed orders error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching completed orders.",
+    });
+  }
+});
+
+// ========== GET ALL COMPLETED ORDERS (FOR MASTER ACCOUNT ONLY) ==========
+app.get("/api/completed-orders", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM completed_orders ORDER BY completion_date DESC`
+    );
+    res.json({ success: true, orders: result.rows });
+  } catch (err) {
+    console.error("Fetch all completed orders error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching all completed orders.",
+    });
+  }
+});
+
+// ========== GET FILES FOR COMPLETED ORDER ==========
+app.get("/api/completed-order-files/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const completedOrdersDir = path.join(
+      __dirname,
+      "uploads",
+      "COMPLETED ORDERS"
+    );
+    const orderFolder = path.join(completedOrdersDir, orderId);
+
+    if (!fs.existsSync(orderFolder)) {
+      return res.json({ success: true, files: [] });
+    }
+
+    const files = fs.readdirSync(orderFolder);
+    res.json({ success: true, files });
+  } catch (err) {
+    console.error("Fetch completed order files error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching completed order files.",
+    });
+  }
+});
+
+// ========== DOWNLOAD COMPLETED ORDER FILE ==========
+app.get("/api/download-completed-file/:orderId/:fileName", async (req, res) => {
+  try {
+    const { orderId, fileName } = req.params;
+    const completedOrdersDir = path.join(
+      __dirname,
+      "uploads",
+      "COMPLETED ORDERS"
+    );
+    const orderFolder = path.join(completedOrdersDir, orderId);
+    const filePath = path.join(orderFolder, decodeURIComponent(fileName));
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: "File not found.",
+      });
+    }
+
+    res.download(filePath);
+  } catch (err) {
+    console.error("Download completed file error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error downloading file.",
+    });
+  }
+});
+
+// ========== DOWNLOAD ALL COMPLETED ORDER FILES AS ZIP ==========
+app.get("/api/download-all-completed-files/:orderId", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const completedOrdersDir = path.join(
+      __dirname,
+      "uploads",
+      "COMPLETED ORDERS"
+    );
+    const orderFolder = path.join(completedOrdersDir, orderId);
+
+    if (!fs.existsSync(orderFolder)) {
+      return res.status(404).json({
+        success: false,
+        message: "Order folder not found.",
+      });
+    }
+
+    const files = fs.readdirSync(orderFolder);
+
+    if (files.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No files found for this order.",
+      });
+    }
+
+    // SET HEADERS FOR ZIP DOWNLOAD
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${orderId}-report.zip"`
+    );
+
+    // CREATE ZIP ARCHIVE
+    const archive = archiver("zip", {
+      zlib: { level: 9 }, // MAXIMUM COMPRESSION
+    });
+
+    // PIPE ARCHIVE TO RESPONSE
+    archive.pipe(res);
+
+    // ADD FILES TO ZIP
+    files.forEach((fileName) => {
+      const filePath = path.join(orderFolder, fileName);
+      archive.file(filePath, { name: fileName });
+    });
+
+    // FINALIZE ARCHIVE
+    await archive.finalize();
+  } catch (err) {
+    console.error("Download all completed files error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error creating zip file.",
+    });
+  }
+});
+
 // ========== Simple GET ==========
 app.get("/", (req, res) => {
   res.send("File upload server is running.");
 });
 
+// ========== DEBUG: CHECK COMPLETED ORDERS TABLE ==========
+app.get("/api/debug/completed-orders", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM completed_orders ORDER BY completion_date DESC`
+    );
+    res.json({
+      success: true,
+      count: result.rows.length,
+      orders: result.rows,
+    });
+  } catch (err) {
+    console.error("Debug completed orders error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error checking completed orders table.",
+    });
+  }
+});
+
+// ========== DEBUG: CHECK COMPLETED ORDERS FOR SPECIFIC USER ==========
+app.get("/api/debug/completed-orders/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log("DEBUG: Checking completed orders for user:", userId);
+
+    const result = await pool.query(
+      `SELECT * FROM completed_orders WHERE user_id = $1 ORDER BY completion_date DESC`,
+      [userId]
+    );
+
+    console.log(
+      "DEBUG: Found",
+      result.rows.length,
+      "completed orders for user",
+      userId
+    );
+
+    res.json({
+      success: true,
+      userId: userId,
+      count: result.rows.length,
+      orders: result.rows,
+    });
+  } catch (err) {
+    console.error("Debug completed orders for user error:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error checking completed orders for user.",
+    });
+  }
+});
+
 // ========== Start Server ==========
 app.listen(5000, "0.0.0.0", () => {
   console.log("Server started on port 5000");
+
+  // CREATE COMPLETED_ORDERS TABLE IF IT DOESN'T EXIST
+  pool
+    .query(
+      `
+    CREATE TABLE IF NOT EXISTS completed_orders (
+      id SERIAL PRIMARY KEY,
+      order_id VARCHAR(64) UNIQUE NOT NULL,
+      user_id VARCHAR(128) NOT NULL,
+      order_type VARCHAR(64) NOT NULL,
+      completion_date TIMESTAMP DEFAULT NOW(),
+      original_order_data JSONB,
+      created_by VARCHAR(128) NOT NULL,
+      completed_by VARCHAR(128) NOT NULL,
+      created_at TIMESTAMP DEFAULT NOW(),
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `
+    )
+    .then(() => {
+      console.log("Completed orders table ready");
+    })
+    .catch((err) => {
+      console.error("Error creating completed_orders table:", err);
+    });
 });
