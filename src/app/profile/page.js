@@ -93,6 +93,10 @@ export default function ProfilePage() {
             position: data.position || "",
           });
         }
+        // ALWAYS SET LOADING TO FALSE
+        setLoading(false);
+      } else {
+        // ALSO SET LOADING TO FALSE IF NO USER
         setLoading(false);
       }
     });
@@ -116,9 +120,12 @@ export default function ProfilePage() {
       userUid === MASTER_UID
         ? `${process.env.NEXT_PUBLIC_ORDER_API_URL}`
         : `${process.env.NEXT_PUBLIC_ORDER_API_URL}/${userUid}`;
+    // DEBUG LOG
+    console.log("USER UID:", userUid, "ENDPOINT:", endpoint);
     fetch(endpoint)
       .then((res) => res.json())
       .then((data) => {
+        console.log("ORDERS RESPONSE:", data); // DEBUG: LOG RESPONSE DATA
         setOrders(data.orders || []);
         setOrdersLoading(false);
       })
@@ -182,11 +189,15 @@ export default function ProfilePage() {
     setIsEditing(false);
   };
 
+  // DEBUG: LOG RENDER STATE
+  console.log("RENDER", { ordersLoading, orders, ordersError });
+
   if (!isAuthenticated) {
     return <ProtectedRoute />;
   }
 
-  if (loading) {
+  // SHOW SPINNER IF EITHER PROFILE OR ORDERS ARE LOADING
+  if (loading || ordersLoading) {
     return (
       <Center minH="100vh">
         <Spinner size="xl" />
