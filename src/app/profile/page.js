@@ -104,13 +104,18 @@ export default function ProfilePage() {
         ? `${process.env.NEXT_PUBLIC_ORDER_API_URL}`
         : `${process.env.NEXT_PUBLIC_ORDER_API_URL}/${userUid}`;
 
+    console.log("REFRESHING ORDERS FROM:", endpoint); // DEBUG LOG
+
     fetch(endpoint)
       .then((res) => res.json())
       .then((data) => {
+        console.log("ORDERS REFRESH RESPONSE:", data); // DEBUG LOG
+        console.log("ORDERS COUNT:", data.orders?.length || 0); // DEBUG LOG
         setOrders(data.orders || []);
         setOrdersLoading(false);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.error("ORDERS REFRESH ERROR:", error); // DEBUG LOG
         setOrdersError("Failed to fetch orders.");
         setOrdersLoading(false);
       });
@@ -184,8 +189,11 @@ export default function ProfilePage() {
   // HANDLE ORDER COMPLETION
   const handleOrderComplete = () => {
     console.log("HANDLE ORDER COMPLETE CALLED"); // DEBUG LOG
-    refreshOrders();
-    refreshCompletedOrders();
+    // ADD SMALL DELAY TO ENSURE DATABASE UPDATES ARE REFLECTED
+    setTimeout(() => {
+      refreshOrders();
+      refreshCompletedOrders();
+    }, 1000);
   };
 
   // FETCH USER PROFILE FROM FIRESTORE ON MOUNT
@@ -725,12 +733,17 @@ function RecentOrders({ orders, loading, error, onCompleteOrder }) {
   if (loading) return <div>Loading recent activity...</div>;
   if (error) return <div>{error}</div>;
 
+  // FILTER OUT COMPLETED ORDERS - ONLY SHOW IN PROGRESS ORDERS IN DASHBOARD
+  const inProgressOrders = orders.filter(
+    (order) => order.status === "In Progress"
+  );
+
   return (
     <VStack spacing={4} align="stretch">
-      {orders.length === 0 ? (
-        <Text>No recent orders found.</Text>
+      {inProgressOrders.length === 0 ? (
+        <Text>No active orders found.</Text>
       ) : (
-        orders.map((order) => (
+        inProgressOrders.map((order) => (
           <HStack key={order.order_id} justify="space-between">
             <VStack align="start" spacing={1}>
               <Text fontWeight="medium">{order.order_type}</Text>
@@ -739,35 +752,14 @@ function RecentOrders({ orders, loading, error, onCompleteOrder }) {
               </Text>
             </VStack>
             <HStack spacing={2}>
-              <Badge
-                colorScheme={
-                  order.status === "Completed"
-                    ? "green"
-                    : order.status === "In Progress"
-                    ? "blue"
-                    : "yellow"
-                }
+              <Badge colorScheme="blue">{order.status}</Badge>
+              <Button
+                size="sm"
+                colorScheme="green"
+                onClick={() => onCompleteOrder(order)}
               >
-                {order.status}
-              </Badge>
-              {order.status === "Completed" && (
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  onClick={() => downloadReport(order.order_id)}
-                >
-                  Download Report
-                </Button>
-              )}
-              {order.status === "In Progress" && (
-                <Button
-                  size="sm"
-                  colorScheme="green"
-                  onClick={() => onCompleteOrder(order)}
-                >
-                  Complete Order
-                </Button>
-              )}
+                Complete Order
+              </Button>
             </HStack>
           </HStack>
         ))
