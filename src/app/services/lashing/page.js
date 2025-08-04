@@ -33,6 +33,8 @@ const principalOptions = [
   "Eastship Projects & Logistics SRL",
   "Petroconst SA",
   "Life Logistics SRL",
+  "MSC Romania SRL",
+  "Top Expert DCE SRL",
   "Custom",
 ];
 

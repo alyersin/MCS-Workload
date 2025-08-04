@@ -26,7 +26,7 @@ import "react-datepicker/dist/react-datepicker.css";
 // VESSEL-BARGE SERVICE PAGE
 const operatorOptions = [
   "DB Schenker",
-  "DPS World",
+  "DPW World",
   "Fast Freight",
   "Life Logistics",
   "Port Shipping & Engineering",

@@ -23,7 +23,7 @@ import SurveyForm from "@/components/SurveyForm";
 
 const operatorOptions = [
   "DB Schenker",
-  "DPS World",
+  "DPW World",
   "Fast Freight",
   "Life Logistics",
   "Port Shipping & Engineering",
@@ -42,6 +42,8 @@ const portAreaOptions = [
 const principalOptions = [
   "Eastship Projects & Logistics SRL",
   "Life Logistics SRL",
+  "MSC Romania SRL",
+  "Top Expert DCE SRL",
   "Custom",
 ];
 
