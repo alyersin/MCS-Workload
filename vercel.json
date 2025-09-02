@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm cache clean --force && npm install --no-package-lock && npm run build",
+  "installCommand": "npm cache clean --force",
+  "framework": "nextjs",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ]
+}
