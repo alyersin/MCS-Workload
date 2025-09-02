@@ -53,7 +53,7 @@ export async function POST(request) {
     },
     {
       title: "Port & Operator",
-      fields: ["portArea", "operator", "customOperator"],
+      fields: ["portArea", "operator", "customOperator", "lashingBy"],
     },
     {
       title: "Principal",
@@ -61,11 +61,22 @@ export async function POST(request) {
     },
     {
       title: "Cargo Details",
-      fields: ["cargoDescription", "grossWeight", "shipper", "consignee"],
+      fields: [
+        "cargoDescription",
+        "grossWeight",
+        "shipper",
+        "consignee",
+        "vesselName",
+        "cargoGroups",
+      ],
     },
     {
       title: "Survey Findings",
       fields: ["surveyFindings"],
+    },
+    {
+      title: "Other Details",
+      fields: ["otherDetails"],
     },
   ];
 
@@ -92,7 +103,10 @@ export async function POST(request) {
         doc.text(`${label}:`, 25, y);
         doc.setFont("helvetica", "normal");
         // MULTILINE TEXTAREA
-        if (key === "surveyFindings" && String(value).length > 60) {
+        if (
+          (key === "surveyFindings" || key === "otherDetails") &&
+          String(value).length > 60
+        ) {
           const lines = doc.splitTextToSize(String(value), 140);
           doc.text(lines, 60, y);
           y += lines.length * 7;
