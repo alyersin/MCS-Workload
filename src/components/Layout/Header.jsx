@@ -36,7 +36,6 @@ import {
 } from "@chakra-ui/react";
 import { HamburgerIcon } from "@chakra-ui/icons";
 import { useAuth } from "@/hooks/useAuth";
-import LoginModal from "@/components/Auth/LoginModal";
 import StyledLoginModal from "@/components/Auth/StyledLoginModal";
 import { useRouter } from "next/navigation";
 import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
@@ -135,17 +134,6 @@ export default function Header() {
       <Link href="/" textDecoration="none" _hover={{ textDecoration: "none" }}>
         Home
       </Link>
-
-      {/* Survey Order Link for Customers */}
-      {isAuthenticated && isCustomer && (
-        <Link
-          href="/survey-order"
-          textDecoration="none"
-          _hover={{ textDecoration: "none" }}
-        >
-          Survey Order
-        </Link>
-      )}
 
       {/* Services Menu - Only for Surveyors and Admins */}
       {isAuthenticated && !isCustomer && (
@@ -250,6 +238,21 @@ export default function Header() {
           Login
         </StyledButton>
       )}
+
+      {/* Theme Toggle for Mobile */}
+      <Box
+        pt={4}
+        borderTop="1px"
+        borderColor={useColorModeValue("gray.200", "gray.700")}
+        width="100%"
+      >
+        <HStack justify="space-between" align="center">
+          <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")}>
+            Theme
+          </Text>
+          <ColorModeSwitch />
+        </HStack>
+      </Box>
     </VStack>
   );
 
@@ -266,18 +269,6 @@ export default function Header() {
         mb={0}
         position="relative"
       >
-        {/* Toggle switch full-width bar (desktop only) */}
-        <Box
-          width="100%"
-          display={{ base: "none", md: "flex" }}
-          justifyContent="flex-end"
-          alignItems="center"
-          px={6}
-          py={1}
-          style={{ minHeight: 0 }}
-        >
-          <ColorModeSwitch />
-        </Box>
         {/* Main header content */}
         <Box
           width={{ base: "100%", md: "1024px" }}
@@ -308,17 +299,6 @@ export default function Header() {
               >
                 Home
               </Link>
-
-              {/* Survey Order Link for Customers */}
-              {isAuthenticated && isCustomer && (
-                <Link
-                  href="/survey-order"
-                  textDecoration="none"
-                  _hover={{ textDecoration: "none" }}
-                >
-                  Survey Order
-                </Link>
-              )}
 
               {/* Services Menu - Only for Surveyors and Admins */}
               {isAuthenticated && !isCustomer && (
@@ -471,6 +451,11 @@ export default function Header() {
                   )}
                 </>
               )}
+
+              {/* Desktop Theme Toggle - Only visible on desktop */}
+              <Box display={{ base: "none", md: "block" }}>
+                <ColorModeSwitch />
+              </Box>
             </HStack>
 
             <IconButton
@@ -492,12 +477,6 @@ export default function Header() {
             </Drawer>
           </Flex>
         </Box>
-        {/* OLD MODAL - DISABLED */}
-        {/* <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={handleLoginClose}
-          initialMode={modalMode}
-        /> */}
 
         {/* NEW STYLED MODAL */}
         <StyledLoginModal

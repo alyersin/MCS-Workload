@@ -20,7 +20,6 @@ import {
   Text,
   Button,
 } from "@chakra-ui/react";
-import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
 
 function AppContent({ children, isLoginPage }) {
   const { isLoading, hasError } = useAuthLoading();
@@ -68,14 +67,6 @@ function AppContent({ children, isLoginPage }) {
       {!isLoginPage && (
         <Box position="relative">
           <Header />
-          <Box
-            display={{ base: "block", md: "none" }}
-            position="absolute"
-            right={4}
-            bottom="-4px"
-          >
-            <ColorModeSwitch />
-          </Box>
         </Box>
       )}
       <Box as="main" flex="1" display="flex" flexDirection="column">

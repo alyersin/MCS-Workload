@@ -34,7 +34,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { useDisclosure } from "@chakra-ui/react";
-import LoginModal from "@/components/Auth/LoginModal";
+import StyledLoginModal from "@/components/Auth/StyledLoginModal";
 import styled from "styled-components";
 
 // Professional styled button for customer actions
@@ -124,7 +124,7 @@ export default function CustomerDashboard() {
     return (
       <Box bg={bg} minH="100vh" py={10}>
         <Container maxW="container.xl">
-          <VStack spacing={8} textAlign="center">
+          <VStack spacing={8} textAlign="center" mt={20}>
             <Heading as="h1" size="xl" color="teal.600">
               Customer Dashboard
             </Heading>
@@ -136,7 +136,7 @@ export default function CustomerDashboard() {
             </Button>
           </VStack>
         </Container>
-        <LoginModal isOpen={isOpen} onClose={onClose} />
+        <StyledLoginModal isOpen={isOpen} onClose={onClose} />
       </Box>
     );
   }
