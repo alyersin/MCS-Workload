@@ -384,7 +384,13 @@ export default function SurveyForm({
 
   if (!isAuthenticated) {
     return (
-      <Container maxW="container.md" py={6}>
+      <Container
+        maxW="container.md"
+        minH="60vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
         <Box
           borderRadius="2xl"
           overflow="hidden"
@@ -393,7 +399,7 @@ export default function SurveyForm({
           p={8}
           textAlign="center"
         >
-          <Heading size="md" color="red.500" mb={4}>
+          <Heading size="md" color="teal.600" mb={4}>
             AUTHENTICATION REQUIRED
           </Heading>
           <Box color="gray.600">Please log in to submit this form.</Box>

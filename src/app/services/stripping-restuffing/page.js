@@ -18,6 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 
 // STRIPPING & RESTUFFING SERVICE PAGE
 const operatorOptions = [
@@ -127,11 +129,13 @@ const dropdownOptions = {
 
 export default function StrippingRestuffing() {
   return (
-    <SurveyForm
-      title="Stripping & Restuffing Survey"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="StrippingRestuffing"
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Stripping & Restuffing Survey"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="StrippingRestuffing"
+      />
+    </RoleProtectedRoute>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -20,16 +20,21 @@ import {
   Text,
   HStack,
   Link as ChakraLink,
+  Radio,
+  RadioGroup,
+  Stack,
+  FormHelperText,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { signIn } from "next-auth/react";
 import { db } from "@/utils/firebaseClient";
 import { doc, setDoc } from "firebase/firestore";
 import ReCAPTCHA from "react-google-recaptcha";
+import { USER_ROLES, ROLE_NAMES, ROLE_DESCRIPTIONS } from "@/constants/roles";
 
 // LOGIN MODAL COMPONENT
-export default function LoginModal({ isOpen, onClose }) {
-  const [mode, setMode] = useState("login");
+export default function LoginModal({ isOpen, onClose, initialMode = "login" }) {
+  const [mode, setMode] = useState(initialMode);
   const [loginCredentials, setLoginCredentials] = useState({
     email: "",
     password: "",
@@ -38,6 +43,8 @@ export default function LoginModal({ isOpen, onClose }) {
     email: "",
     password: "",
     confirmPassword: "",
+    displayName: "",
+    role: USER_ROLES.CUSTOMER, // DEFAULT TO CUSTOMER
   });
   const [resetEmail, setResetEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -47,6 +54,11 @@ export default function LoginModal({ isOpen, onClose }) {
 
   const toast = useToast();
   const inputBg = useColorModeValue("gray.50", "gray.600");
+
+  // UPDATE MODE WHEN INITIAL MODE PROP CHANGES
+  useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
 
   // LOGIN LOGIC
   const handleLoginInputChange = (e) => {
@@ -115,7 +127,8 @@ export default function LoginModal({ isOpen, onClose }) {
     if (
       !registerForm.email ||
       !registerForm.password ||
-      !registerForm.confirmPassword
+      !registerForm.confirmPassword ||
+      !registerForm.displayName
     ) {
       toast({
         title: "All fields are required!",
@@ -134,6 +147,15 @@ export default function LoginModal({ isOpen, onClose }) {
       });
       return;
     }
+    if (registerForm.password.length < 6) {
+      toast({
+        title: "Password must be at least 6 characters",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     if (!recaptchaToken) {
       toast({
         title: "RECAPTCHA REQUIRED",
@@ -146,6 +168,7 @@ export default function LoginModal({ isOpen, onClose }) {
     }
     setIsLoading(true);
     try {
+      // STEP 1: CREATE FIREBASE AUTH USER
       const response = await fetch(
         `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
         {
@@ -159,6 +182,7 @@ export default function LoginModal({ isOpen, onClose }) {
         }
       );
       const data = await response.json();
+
       if (data.error) {
         toast({
           title: "Registration failed",
@@ -167,18 +191,38 @@ export default function LoginModal({ isOpen, onClose }) {
           duration: 4000,
           isClosable: true,
         });
-      } else {
-        toast({
-          title: "Registration successful!",
-          description: "You can now log in.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        setMode("login");
-        setRegisterForm({ email: "", password: "", confirmPassword: "" });
+        return;
       }
+
+      // STEP 2: CREATE USER PROFILE IN FIRESTORE WITH ROLE
+      const userId = data.localId;
+      await setDoc(doc(db, "users", userId), {
+        email: registerForm.email,
+        displayName: registerForm.displayName,
+        role: registerForm.role,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Registration successful!",
+        description: `Account created as ${
+          ROLE_NAMES[registerForm.role]
+        }. You can now log in.`,
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+      setMode("login");
+      setRegisterForm({
+        email: "",
+        password: "",
+        confirmPassword: "",
+        displayName: "",
+        role: USER_ROLES.CUSTOMER,
+      });
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "An error occurred",
         description: "Please try again later.",
@@ -250,9 +294,9 @@ export default function LoginModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent maxW="500px">
         <ModalHeader textAlign="center">
           {mode === "register"
             ? "Register"
@@ -264,12 +308,25 @@ export default function LoginModal({ isOpen, onClose }) {
         <ModalBody pb={6}>
           {mode === "register" ? (
             <Box as="form" onSubmit={handleRegisterSubmit}>
-              <VStack spacing={6}>
+              <VStack spacing={4}>
                 {/* RECAPTCHA WIDGET - REQUIRED */}
                 <ReCAPTCHA
                   sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}
                   onChange={setRecaptchaToken}
                 />
+                <FormControl isRequired>
+                  <FormLabel>Full Name</FormLabel>
+                  <Input
+                    type="text"
+                    name="displayName"
+                    value={registerForm.displayName}
+                    onChange={handleRegisterInputChange}
+                    bg={inputBg}
+                    borderRadius="md"
+                    focusBorderColor="teal.400"
+                    placeholder="Enter your full name"
+                  />
+                </FormControl>
                 <FormControl isRequired>
                   <FormLabel>Email</FormLabel>
                   <Input
@@ -280,8 +337,86 @@ export default function LoginModal({ isOpen, onClose }) {
                     bg={inputBg}
                     borderRadius="md"
                     focusBorderColor="teal.400"
-                    // placeholder="Enter your email"
+                    placeholder="Enter your email"
                   />
+                </FormControl>
+                <FormControl isRequired>
+                  <FormLabel>Account Type</FormLabel>
+                  <RadioGroup
+                    name="role"
+                    value={registerForm.role}
+                    onChange={(value) =>
+                      setRegisterForm((prev) => ({ ...prev, role: value }))
+                    }
+                  >
+                    <Stack direction="column" spacing={2}>
+                      <Box
+                        p={3}
+                        borderWidth={1}
+                        borderRadius="md"
+                        borderColor={
+                          registerForm.role === USER_ROLES.CUSTOMER
+                            ? "teal.500"
+                            : "gray.200"
+                        }
+                        bg={
+                          registerForm.role === USER_ROLES.CUSTOMER
+                            ? "teal.50"
+                            : "transparent"
+                        }
+                        cursor="pointer"
+                        onClick={() =>
+                          setRegisterForm((prev) => ({
+                            ...prev,
+                            role: USER_ROLES.CUSTOMER,
+                          }))
+                        }
+                      >
+                        <Radio value={USER_ROLES.CUSTOMER} colorScheme="teal">
+                          <Text fontWeight="bold" fontSize="sm">
+                            {ROLE_NAMES[USER_ROLES.CUSTOMER]}
+                          </Text>
+                        </Radio>
+                        <Text fontSize="xs" color="gray.600" ml={6}>
+                          {ROLE_DESCRIPTIONS[USER_ROLES.CUSTOMER]}
+                        </Text>
+                      </Box>
+                      <Box
+                        p={3}
+                        borderWidth={1}
+                        borderRadius="md"
+                        borderColor={
+                          registerForm.role === USER_ROLES.SURVEYOR
+                            ? "teal.500"
+                            : "gray.200"
+                        }
+                        bg={
+                          registerForm.role === USER_ROLES.SURVEYOR
+                            ? "teal.50"
+                            : "transparent"
+                        }
+                        cursor="pointer"
+                        onClick={() =>
+                          setRegisterForm((prev) => ({
+                            ...prev,
+                            role: USER_ROLES.SURVEYOR,
+                          }))
+                        }
+                      >
+                        <Radio value={USER_ROLES.SURVEYOR} colorScheme="teal">
+                          <Text fontWeight="bold" fontSize="sm">
+                            {ROLE_NAMES[USER_ROLES.SURVEYOR]}
+                          </Text>
+                        </Radio>
+                        <Text fontSize="xs" color="gray.600" ml={6}>
+                          {ROLE_DESCRIPTIONS[USER_ROLES.SURVEYOR]}
+                        </Text>
+                      </Box>
+                    </Stack>
+                  </RadioGroup>
+                  <FormHelperText fontSize="xs">
+                    Select the type of account that best describes your needs
+                  </FormHelperText>
                 </FormControl>
                 <FormControl isRequired>
                   <FormLabel>Password</FormLabel>
@@ -294,7 +429,7 @@ export default function LoginModal({ isOpen, onClose }) {
                       bg={inputBg}
                       borderRadius="md"
                       focusBorderColor="teal.400"
-                      // placeholder="Enter your password"
+                      placeholder="Enter your password"
                     />
                     <InputRightElement>
                       <IconButton
@@ -302,7 +437,6 @@ export default function LoginModal({ isOpen, onClose }) {
                           showPassword ? "Hide password" : "Show password"
                         }
                         icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                        // SHOW PASSWORD WHILE MOUSE IS HELD
                         onMouseDown={() => setShowPassword(true)}
                         onMouseUp={() => setShowPassword(false)}
                         onMouseLeave={() => setShowPassword(false)}
@@ -323,7 +457,7 @@ export default function LoginModal({ isOpen, onClose }) {
                       bg={inputBg}
                       borderRadius="md"
                       focusBorderColor="teal.400"
-                      // placeholder="Confirm your password"
+                      placeholder="Confirm your password"
                     />
                     <InputRightElement>
                       <IconButton

@@ -3,6 +3,8 @@
 "use client";
 import React from "react";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 
 const loadingLocationOptions = [
   "DB Schenker",
@@ -163,12 +165,14 @@ export default function RaportAmaraj() {
   };
 
   return (
-    <SurveyForm
-      title="Lashing Report"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="RaportAmaraj"
-      onSubmit={handleLashingSubmit}
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Lashing Report"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="RaportAmaraj"
+        onSubmit={handleLashingSubmit}
+      />
+    </RoleProtectedRoute>
   );
 }

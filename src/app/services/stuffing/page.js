@@ -18,6 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 
 // STUFFING SERVICE PAGE
 const operatorOptions = [
@@ -127,11 +129,13 @@ const dropdownOptions = {
 
 export default function Stuffing() {
   return (
-    <SurveyForm
-      title="Stuffing Survey"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="Stuffing"
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Stuffing Survey"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="Stuffing"
+      />
+    </RoleProtectedRoute>
   );
 }

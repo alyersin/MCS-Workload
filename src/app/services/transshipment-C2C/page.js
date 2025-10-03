@@ -18,6 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 
 // TRANSSHIPMENT C2C SERVICE PAGE
 
@@ -128,11 +130,13 @@ const dropdownOptions = {
 
 export default function TransshipmentC2C() {
   return (
-    <SurveyForm
-      title="Transshipment C2C Survey"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="TransshipmentC2C"
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Transshipment C2C Survey"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="TransshipmentC2C"
+      />
+    </RoleProtectedRoute>
   );
 }

@@ -16,10 +16,18 @@ import {
   InputRightElement,
   IconButton,
   useColorModeValue,
+  Select,
+  FormHelperText,
+  Radio,
+  RadioGroup,
+  Stack,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useRouter } from "next/navigation";
 import ReCAPTCHA from "react-google-recaptcha";
+import { USER_ROLES, ROLE_NAMES, ROLE_DESCRIPTIONS } from "@/constants/roles";
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/utils/firebaseClient";
 
 // USER REGISTRATION PAGE
 export default function RegisterPage() {
@@ -27,6 +35,8 @@ export default function RegisterPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    role: USER_ROLES.CUSTOMER, // DEFAULT TO CUSTOMER
+    displayName: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -46,7 +56,12 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.password || !form.confirmPassword) {
+    if (
+      !form.email ||
+      !form.password ||
+      !form.confirmPassword ||
+      !form.displayName
+    ) {
       toast({
         title: "All fields are required!",
         status: "warning",
@@ -64,6 +79,15 @@ export default function RegisterPage() {
       });
       return;
     }
+    if (form.password.length < 6) {
+      toast({
+        title: "Password must be at least 6 characters",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     if (!recaptchaToken) {
       toast({
         title: "RECAPTCHA REQUIRED",
@@ -76,6 +100,7 @@ export default function RegisterPage() {
     }
     setIsLoading(true);
     try {
+      // STEP 1: CREATE FIREBASE AUTH USER
       const response = await fetch(
         `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
         {
@@ -89,6 +114,7 @@ export default function RegisterPage() {
         }
       );
       const data = await response.json();
+
       if (data.error) {
         toast({
           title: "Registration failed",
@@ -97,17 +123,31 @@ export default function RegisterPage() {
           duration: 4000,
           isClosable: true,
         });
-      } else {
-        toast({
-          title: "Registration successful!",
-          description: "You can now log in.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        router.push("/login");
+        return;
       }
+
+      // STEP 2: CREATE USER PROFILE IN FIRESTORE WITH ROLE
+      const userId = data.localId;
+      await setDoc(doc(db, "users", userId), {
+        email: form.email,
+        displayName: form.displayName,
+        role: form.role,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Registration successful!",
+        description: `Account created as ${
+          ROLE_NAMES[form.role]
+        }. You can now log in.`,
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+      router.push("/login");
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "An error occurred",
         description: "Please try again later.",
@@ -134,6 +174,19 @@ export default function RegisterPage() {
         <Box p={8}>
           <VStack spacing={6} as="form" onSubmit={handleSubmit}>
             <FormControl isRequired>
+              <FormLabel>Full Name</FormLabel>
+              <Input
+                type="text"
+                name="displayName"
+                value={form.displayName}
+                onChange={handleInputChange}
+                bg={inputBg}
+                borderRadius="md"
+                focusBorderColor="teal.400"
+                placeholder="Enter your full name"
+              />
+            </FormControl>
+            <FormControl isRequired>
               <FormLabel>Email</FormLabel>
               <Input
                 type="email"
@@ -145,6 +198,84 @@ export default function RegisterPage() {
                 focusBorderColor="teal.400"
                 placeholder="Enter your email"
               />
+            </FormControl>
+            <FormControl isRequired>
+              <FormLabel>Account Type</FormLabel>
+              <RadioGroup
+                name="role"
+                value={form.role}
+                onChange={(value) =>
+                  setForm((prev) => ({ ...prev, role: value }))
+                }
+              >
+                <Stack direction="column" spacing={3}>
+                  <Box
+                    p={4}
+                    borderWidth={1}
+                    borderRadius="md"
+                    borderColor={
+                      form.role === USER_ROLES.CUSTOMER
+                        ? "teal.500"
+                        : "gray.200"
+                    }
+                    bg={
+                      form.role === USER_ROLES.CUSTOMER
+                        ? "teal.50"
+                        : "transparent"
+                    }
+                    cursor="pointer"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        role: USER_ROLES.CUSTOMER,
+                      }))
+                    }
+                  >
+                    <Radio value={USER_ROLES.CUSTOMER} colorScheme="teal">
+                      <Text fontWeight="bold">
+                        {ROLE_NAMES[USER_ROLES.CUSTOMER]}
+                      </Text>
+                    </Radio>
+                    <Text fontSize="sm" color="gray.600" ml={6}>
+                      {ROLE_DESCRIPTIONS[USER_ROLES.CUSTOMER]}
+                    </Text>
+                  </Box>
+                  <Box
+                    p={4}
+                    borderWidth={1}
+                    borderRadius="md"
+                    borderColor={
+                      form.role === USER_ROLES.SURVEYOR
+                        ? "teal.500"
+                        : "gray.200"
+                    }
+                    bg={
+                      form.role === USER_ROLES.SURVEYOR
+                        ? "teal.50"
+                        : "transparent"
+                    }
+                    cursor="pointer"
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        role: USER_ROLES.SURVEYOR,
+                      }))
+                    }
+                  >
+                    <Radio value={USER_ROLES.SURVEYOR} colorScheme="teal">
+                      <Text fontWeight="bold">
+                        {ROLE_NAMES[USER_ROLES.SURVEYOR]}
+                      </Text>
+                    </Radio>
+                    <Text fontSize="sm" color="gray.600" ml={6}>
+                      {ROLE_DESCRIPTIONS[USER_ROLES.SURVEYOR]}
+                    </Text>
+                  </Box>
+                </Stack>
+              </RadioGroup>
+              <FormHelperText>
+                Select the type of account that best describes your needs
+              </FormHelperText>
             </FormControl>
             <FormControl isRequired>
               <FormLabel>Password</FormLabel>

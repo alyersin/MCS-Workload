@@ -18,6 +18,8 @@ import {
 } from "@chakra-ui/react";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 
 // TRANSLOADING TRUCK-CONTAINER SERVICE PAGE
 
@@ -128,11 +130,13 @@ const dropdownOptions = {
 
 export default function TruckContainer() {
   return (
-    <SurveyForm
-      title="Transloading Truck-Container Survey"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="TransloadingTruckContainer"
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Transloading Truck-Container Survey"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="TransloadingTruckContainer"
+      />
+    </RoleProtectedRoute>
   );
 }

@@ -2,7 +2,7 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { adminAuth } from "@/utils/firebaseAdmin";
 
-const handler = NextAuth({
+export const authOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -16,34 +16,62 @@ const handler = NextAuth({
           return null;
         }
 
-        const response = await fetch(
-          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-              returnSecureToken: true,
-            }),
+        try {
+          // Add timeout to Firebase Auth API call
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+          const response = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${process.env.NEXT_PUBLIC_FIREBASE_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: credentials.email,
+                password: credentials.password,
+                returnSecureToken: true,
+              }),
+              signal: controller.signal,
+            }
+          );
+
+          clearTimeout(timeoutId);
+          const data = await response.json();
+
+          if (data.error) {
+            console.error("Firebase Auth Error:", data.error);
+            return null;
           }
-        );
 
-        const data = await response.json();
+          // Add timeout to Firebase Admin SDK call
+          const adminController = new AbortController();
+          const adminTimeoutId = setTimeout(
+            () => adminController.abort(),
+            10000
+          ); // 10 second timeout
 
-        if (data.error) {
-          console.error("Firebase Auth Error:", data.error);
+          const userRecord = await Promise.race([
+            adminAuth.getUserByEmail(credentials.email),
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("Firebase Admin SDK timeout")),
+                10000
+              )
+            ),
+          ]);
+
+          clearTimeout(adminTimeoutId);
+
+          return {
+            id: userRecord.uid,
+            uid: userRecord.uid,
+            email: userRecord.email,
+            name: userRecord.displayName || userRecord.email,
+          };
+        } catch (error) {
+          console.error("Authentication error:", error);
           return null;
         }
-
-        const userRecord = await adminAuth.getUserByEmail(credentials.email);
-
-        return {
-          id: userRecord.uid,
-          uid: userRecord.uid,
-          email: userRecord.email,
-          name: userRecord.displayName || userRecord.email,
-        };
       },
     }),
   ],
@@ -75,6 +103,8 @@ const handler = NextAuth({
   },
 
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
+
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

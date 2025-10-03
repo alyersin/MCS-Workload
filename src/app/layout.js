@@ -12,22 +12,54 @@ import StyledComponentsRegistry from "@/lib/registry";
 import AuthProvider, {
   useAuthLoading,
 } from "@/components/Providers/SessionProvider";
-import { Spinner, Center, useColorModeValue } from "@chakra-ui/react";
+import {
+  Spinner,
+  Center,
+  useColorModeValue,
+  VStack,
+  Text,
+  Button,
+} from "@chakra-ui/react";
 import ColorModeSwitch from "@/components/UI/ColorModeSwitch";
 
 function AppContent({ children, isLoginPage }) {
-  const { isLoading } = useAuthLoading();
+  const { isLoading, hasError } = useAuthLoading();
   const bg = useColorModeValue("gray.50", "gray.900");
+
+  if (hasError) {
+    return (
+      <Center minH="100vh" w="100vw" bg={bg}>
+        <VStack spacing={4}>
+          <Text fontSize="lg" color="red.500" textAlign="center">
+            Authentication service is temporarily unavailable
+          </Text>
+          <Button
+            colorScheme="teal"
+            onClick={() => window.location.reload()}
+            size="md"
+          >
+            Retry
+          </Button>
+        </VStack>
+      </Center>
+    );
+  }
+
   if (isLoading) {
     return (
-      <Center minH="100vh" w="100vw">
-        <Spinner
-          size="xl"
-          thickness="4px"
-          speed="0.65s"
-          color="teal.500"
-          emptyColor="gray.200"
-        />
+      <Center minH="100vh" w="100vw" bg={bg}>
+        <VStack spacing={4}>
+          <Spinner
+            size="xl"
+            thickness="4px"
+            speed="0.65s"
+            color="teal.500"
+            emptyColor="gray.200"
+          />
+          <Text fontSize="sm" color="gray.600">
+            Loading authentication...
+          </Text>
+        </VStack>
       </Center>
     );
   }

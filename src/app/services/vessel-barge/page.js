@@ -20,6 +20,8 @@ import {
 import { AddIcon, MinusIcon } from "@chakra-ui/icons";
 import { useSecretAccess } from "@/hooks/useSecretAccess";
 import SurveyForm from "@/components/SurveyForm";
+import RoleProtectedRoute from "@/components/Auth/RoleProtectedRoute";
+import { USER_ROLES } from "@/constants/roles";
 import ReactDatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -114,11 +116,13 @@ const dropdownOptions = {
 
 export default function VesselBarge() {
   return (
-    <SurveyForm
-      title="Vessel/Barge Survey"
-      fields={fields}
-      dropdownOptions={dropdownOptions}
-      secretAccess="VesselBarge"
-    />
+    <RoleProtectedRoute allowedRoles={[USER_ROLES.SURVEYOR]}>
+      <SurveyForm
+        title="Vessel/Barge Survey"
+        fields={fields}
+        dropdownOptions={dropdownOptions}
+        secretAccess="VesselBarge"
+      />
+    </RoleProtectedRoute>
   );
 }

@@ -8,7 +8,6 @@ import {
   Container,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
-import NoticeModal from "@/components/Modals/NoticeModal";
 import StyledHamburger from "@/components/UI/StyledHamburger";
 
 // MAIN LANDING PAGE
@@ -23,7 +22,6 @@ export default function Home() {
       justifyContent="center"
       px={4}
     >
-      <NoticeModal />
       <Container maxW="lg" textAlign="center">
         <VStack spacing={6}>
           {/* <VStack> */}
